@@ -14,34 +14,113 @@ import java.util.regex.Pattern;
 
 public class Imu
 {
-  public static final String LINE_REGEX = "^(X=([\\d]*))?(Y=([\\d]*))?(Z=([\\d]*))?(B=([\\d]*))?(R=([\\d]*))?$";
+  public static final String RAW_LINE_REGEX = "^(X=([\\d]*))?(Y=([\\d]*))?(Z=([\\d]*))?(B=([\\d]*))?(R=([\\d]*))?$";
+  public static final String GRAVITY_LINE_REGEX = "^(X=([\\d\\.\\-]*))?(Y=([\\d\\.\\-]*))?(Z=([\\d\\.\\-]*))?(B=([\\d\\.\\-]*))?(R=([\\d\\-]*))?$";
+
   public static final int X_GROUP = 2;
   public static final int Y_GROUP = 4;
   public static final int Z_GROUP = 6;
   public static final int B_GROUP = 8;
   public static final int R_GROUP = 10;
   
+  public static final char MAIN_MENU = ' ';
+  public static final char START_DETECTION = '1';
+  public static final char MODE_MENU = '5';
+  public static final char GRAVITY_MODE = '1';
+  public static final char RAW_MODE = '2';
+
+  public enum Mode
+  {
+    RAW(RAW_LINE_REGEX, RAW_MODE) {
+      protected void signal(Dimension dimension, String value,
+        List<ImuListener> listeners)
+      {
+        int i = Integer.valueOf(value);
+        for (ImuListener listener: listeners)
+          listener.onRaw(dimension, i);
+      }
+    }, GRAVITY(GRAVITY_LINE_REGEX, GRAVITY_MODE) {
+      protected void signal(Dimension dimension, String value,
+        List<ImuListener> listeners)
+      {
+        float f = Float.valueOf(value);
+        for (ImuListener listener: listeners)
+          listener.onGravity(dimension, f);
+      }
+    };
+    
+    private final Pattern mPattern;
+    private final char[] mStartCommand;
+    private final char[] mStopCommand;
+    
+    Mode(String lineRegex, char modeSelect)
+    {
+      mPattern = Pattern.compile(lineRegex);
+      mStartCommand = new char[]{MAIN_MENU, MODE_MENU, modeSelect, START_DETECTION};
+      mStopCommand = new char[]{MAIN_MENU};
+    }
+    
+    public Matcher parse(String line)
+    {
+      return mPattern.matcher(line);
+    }
+    
+    public char[] getStartCommand()
+    {
+      return mStartCommand;
+    }
+
+    public char[] getStopCommand()
+    {
+      return mStopCommand;
+    }
+
+    public void processLine(String line, List<ImuListener> listeners)
+    {
+      Matcher m = parse(line);
+      if (!m.find())
+        return;
+      
+      for (Dimension dimension: Dimension.values())
+      {
+        String value = m.group(dimension.getParseGroup());
+        if (null != value)
+          signal(dimension, value, listeners);
+      }
+    }
+
+    protected abstract void signal(Dimension dimension, String value,
+      List<ImuListener> listeners);
+  }
+  
   public enum Dimension
   {
-    X_AXIS(X_GROUP), Y_AXIS(Y_GROUP), Z_AXIS(Z_GROUP), ROTATION(R_GROUP), BATTARY(B_GROUP);
+    X_AXIS(X_GROUP, "X"), Y_AXIS(Y_GROUP, "Y"), Z_AXIS(Z_GROUP, "Z"), BATTARY(B_GROUP, "BATTARY"), ROTATION(R_GROUP, "ROTATE");
     
     private final int mParseGroup;
+    private final String mName;
 
-    Dimension(int parseGroup)
+    Dimension(int parseGroup, String name)
     {
       mParseGroup = parseGroup;
+      mName = name;
     }
 
     public int getParseGroup()
     {
       return mParseGroup;
     }
+    
+    public String toString()
+    {
+      return mName;
+    }
   }
   
   private final List<ImuListener> mListeners;
   private final BufferedReader mSource;
   private final BufferedWriter mSink;
-  private final Pattern mLinePattern;
+  private Mode mMode;
   private Thread mProcessThread;
   
   public Imu(InputStream inputStream, OutputStream outputStream)
@@ -50,7 +129,6 @@ public class Imu
     mSink = new BufferedWriter(new OutputStreamWriter(outputStream));
     mListeners = new ArrayList<ImuListener>();
     mProcessThread = null;
-    mLinePattern = Pattern.compile(LINE_REGEX);
   }
 
   public void addListner(ImuListener listener)
@@ -66,7 +144,7 @@ public class Imu
       {
         String line = mSource.readLine();
         if (null != line)
-          processLine(line);
+          mMode.processLine(line, mListeners);
         else
           stop();
       }
@@ -77,25 +155,18 @@ public class Imu
     }
   }
 
-  private void processLine(String line)
+  public void start(Mode mode, boolean block)
   {
-    Matcher m = mLinePattern.matcher(line);
-    if (!m.find())
-      return;
+    // stop if running 
     
-    for (Dimension dimension: Dimension.values())
-    {
-      String value = m.group(dimension.getParseGroup());
-      if (value != null)
-        for (ImuListener listener: mListeners)
-          listener.onRaw(dimension, Integer.valueOf(value));
-    }
-  }
-
-  public void start(boolean block)
-  {
     if (isRunning())
       stop();
+    
+    // set mode
+    
+    mMode = mode;
+    
+    // start data for this mode
     
     startData();
     mProcessThread = new Thread()
@@ -106,6 +177,8 @@ public class Imu
       }
     };
 
+    // start the process thread and block if required
+    
     synchronized (mProcessThread)
     {
       mProcessThread.start();
@@ -124,37 +197,6 @@ public class Imu
     }
   }
 
-  private boolean isRunning()
-  {
-    return null != mProcessThread;
-  }
-
-  private void startData()
-  {
-    try
-    {
-      mSink.write(" 1");
-      mSink.flush();
-    }
-    catch (IOException e1)
-    {
-      e1.printStackTrace();
-    }
-  }
-  
-  private void stopData()
-  {
-    try
-    {
-      mSink.write(" ");
-      mSink.flush();
-    }
-    catch (IOException e1)
-    {
-      e1.printStackTrace();
-    }
-  }
-
   public void stop()
   {
     synchronized (mProcessThread)
@@ -162,6 +204,34 @@ public class Imu
       stopData();
       mProcessThread.notifyAll();
       mProcessThread = null;
+    }
+  }
+
+  private boolean isRunning()
+  {
+    return null != mProcessThread;
+  }
+
+  private void startData()
+  {
+    sendCommand(mMode.getStartCommand());
+  }
+  
+  private void stopData()
+  {
+    sendCommand(mMode.getStopCommand());
+  }
+
+  private void sendCommand(char[] command)
+  {
+    try
+    {
+      mSink.write(command);
+      mSink.flush();
+    }
+    catch (IOException e1)
+    {
+      e1.printStackTrace();
     }
   }
 }

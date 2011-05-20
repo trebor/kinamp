@@ -84,7 +84,7 @@ public class KinAmp extends Activity implements Loggable
       public void onClick(View v)
       {
         if (mImuToggle.isChecked())
-          mImu.start(false);
+          mImu.start(Imu.Mode.RAW, false);
         else
           mImu.stop();
       }
@@ -108,6 +108,11 @@ public class KinAmp extends Activity implements Loggable
             
           seekBar.setProgress(value);
         }
+      }
+
+      public void onGravity(Dimension dimension, float value)
+      {
+        log.debug("G-%s: %3f", dimension, value);
       }
     });
 
