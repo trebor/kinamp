@@ -1,9 +1,48 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent">    
-    <RelativeLayout android:id="@+id/relativeLayout1" android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center">
-        <Button android:layout_alignParentLeft="true" android:layout_height="wrap_content" android:layout_width="wrap_content" android:id="@+id/beep" android:text="@string/button_text"></Button>
-    </RelativeLayout>
+  android:layout_width="match_parent" android:layout_height="match_parent"
+  android:orientation="vertical">
+  <LinearLayout android:id="@+id/linearLayout2"
+    android:layout_width="wrap_content" android:orientation="horizontal"
+    android:baselineAligned="true" android:layout_gravity="center"
+    android:layout_height="wrap_content">
+    <ToggleButton android:id="@+id/imuToggle"
+      android:textOn="IMU" android:textOff="IMU" android:layout_width="wrap_content"
+      android:layout_height="wrap_content" android:layout_gravity="center"></ToggleButton>
+    <Button android:id="@+id/beep" android:layout_width="wrap_content"
+      android:text="@string/button_text" android:layout_weight="1"
+      android:layout_gravity="center" android:layout_height="wrap_content"></Button>
+  </LinearLayout>
+  <LinearLayout android:layout_height="wrap_content"
+    android:layout_width="match_parent" android:id="@+id/linearLayout1"
+    android:orientation="horizontal">
+    <TextView android:text="X: " android:textSize="20sp"
+      android:layout_height="wrap_content" android:layout_width="wrap_content"
+      android:id="@+id/textView1" android:textStyle="bold"></TextView>
+    <SeekBar android:id="@+id/seekBarX" android:layout_height="wrap_content"
+      android:layout_width="match_parent"></SeekBar>
+  </LinearLayout>
+  <LinearLayout android:layout_height="wrap_content"
+    android:layout_width="match_parent" android:id="@+id/linearLayout1"
+    android:orientation="horizontal">
+    <TextView android:text="Y: " android:textSize="20sp"
+      android:layout_height="wrap_content" android:layout_width="wrap_content"
+      android:id="@+id/textView1" android:textStyle="bold"></TextView>
+    <SeekBar android:id="@+id/seekBarY" android:layout_height="wrap_content"
+      android:layout_width="match_parent"></SeekBar>
+  </LinearLayout>
+  <LinearLayout android:layout_height="wrap_content"
+    android:layout_width="match_parent" android:id="@+id/linearLayout1"
+    android:orientation="horizontal">
+    <TextView android:text="Z: " android:textSize="20sp"
+      android:layout_height="wrap_content" android:layout_width="wrap_content"
+      android:id="@+id/textView1" android:textStyle="bold"></TextView>
+    <SeekBar android:id="@+id/seekBarZ" android:layout_height="wrap_content"
+      android:layout_width="match_parent"></SeekBar>
+  </LinearLayout>
+  <ScrollView android:layout_height="match_parent"
+    android:layout_width="match_parent" android:id="@+id/scrollView1">
+    <TextView android:text="" android:layout_width="match_parent"
+      android:id="@+id/output" android:layout_height="match_parent" android:textStyle="bold" android:textSize="25sp" android:typeface="monospace"></TextView>
+  </ScrollView>
 </LinearLayout>
