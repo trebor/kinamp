@@ -21,8 +21,24 @@ public class Imu
   public static final int B_GROUP = 8;
   public static final int R_GROUP = 10;
   
+  public enum Dimension
+  {
+    X_AXIS(X_GROUP), Y_AXIS(Y_GROUP), Z_AXIS(Z_GROUP), ROTATION(R_GROUP), BATTARY(B_GROUP);
+    
+    private final int mParseGroup;
+
+    Dimension(int parseGroup)
+    {
+      mParseGroup = parseGroup;
+    }
+
+    public int getParseGroup()
+    {
+      return mParseGroup;
+    }
+  }
+  
   private final List<ImuListener> mListeners;
-  private final ImuListener mListener;
   private final BufferedReader mSource;
   private final BufferedWriter mSink;
   private final Pattern mLinePattern;
@@ -35,38 +51,6 @@ public class Imu
     mListeners = new ArrayList<ImuListener>();
     mProcessThread = null;
     mLinePattern = Pattern.compile(LINE_REGEX);
-    mListener = new ImuListener()
-    {
-      public void onRawX(int x)
-      {
-        for (ImuListener listener: mListeners)
-          listener.onRawX(x);
-      }
-
-      public void onRawY(int y)
-      {
-        for (ImuListener listener: mListeners)
-          listener.onRawY(y);
-      }
-
-      public void onRawZ(int z)
-      {
-        for (ImuListener listener: mListeners)
-          listener.onRawZ(z);
-      }
-
-      public void onRawRotate(int rotate)
-      {
-        for (ImuListener listener: mListeners)
-          listener.onRawRotate(rotate);
-      }
-
-      public void onRawBattery(int battery)
-      {
-        for (ImuListener listener: mListeners)
-          listener.onRawBattery(battery);
-      }
-    };
   }
 
   public void addListner(ImuListener listener)
@@ -98,36 +82,14 @@ public class Imu
     Matcher m = mLinePattern.matcher(line);
     if (!m.find())
       return;
-
-    // handle x value
     
-    String xValue = m.group(X_GROUP);
-    if (xValue != null)
-      mListener.onRawX(Integer.valueOf(xValue));
-
-    // handle y value
-    
-    String yValue = m.group(Y_GROUP);
-    if (yValue != null)
-      mListener.onRawY(Integer.valueOf(yValue));
-
-    // handle z value
-    
-    String zValue = m.group(Z_GROUP);
-    if (zValue != null)
-      mListener.onRawZ(Integer.valueOf(zValue));
-
-    // handle b value
-    
-    String bValue = m.group(B_GROUP);
-    if (bValue != null)
-      mListener.onRawBattery(Integer.valueOf(bValue));
-    
-    // handle r value
-    
-    String rValue = m.group(R_GROUP);
-    if (rValue != null)
-      mListener.onRawRotate(Integer.valueOf(rValue));
+    for (Dimension dimension: Dimension.values())
+    {
+      String value = m.group(dimension.getParseGroup());
+      if (value != null)
+        for (ImuListener listener: mListeners)
+          listener.onRaw(dimension, Integer.valueOf(value));
+    }
   }
 
   public void start(boolean block)

@@ -1,6 +1,12 @@
 package org.trebor.kinamp;
 
 import static org.trebor.kinamp.NoiseBox.Sound.*;
+import static org.trebor.kinamp.Imu.Dimension.*;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import org.trebor.kinamp.Imu.Dimension;
 
 import android.app.Activity;
 import android.os.Bundle;
@@ -32,6 +38,8 @@ public class KinAmp extends Activity implements Loggable
   private SeekBar mSeekZ;
   private TextView mOutput;
   private ScrollView mOutputScroll;
+  private Map<Dimension, SeekBar> mSeekBarMap;
+  private Map<Dimension, Integer> mMaxMap;
   
   // the big stuff
   
@@ -39,70 +47,6 @@ public class KinAmp extends Activity implements Loggable
   private NoiseBox mNoiseBox;
   private Imu mImu;
   
-  private ImuListener mDebugListener = new ImuListener()
-  {
-    public void onRawX(int x)
-    {
-      setX(x);
-    }
-
-    public void onRawY(int y)
-    {
-      setY(y);
-    }
-
-    public void onRawZ(int z)
-    {
-      setZ(z);
-    }
-
-    public void onRawRotate(int rotate)
-    {
-      //log.debug("rotate: %d", rotate);
-    }
-
-    public void onRawBattery(int battery)
-    {
-      //log.debug("battery: %d", battery);
-    }
-  };
-
-  private int xMax = 0;
-  private int xHistory = 0;
-  private int yMax = 0;
-  private int zMax = 0;
-  
-  private int lowPass(int history, int sample, float filter)
-  {
-    return (int)(history * filter + sample * (1 - filter));
-  }  
-  
-  public void setX(int value)
-  {
-    value = lowPass(xHistory, value, 0.99f);
-    
-    if (value > xMax)
-      mSeekX.setMax(xMax = value);
-    if (value > 800)
-      mNoiseBox.play(COWBELL1);
-    mSeekX.setProgress(value);
-  }
-  
-  public void setY(int value)
-  {
-    if (value > yMax)
-      mSeekY.setMax(yMax = value);
-      
-    mSeekY.setProgress(value);
-  }
-
-  public void setZ(int value)
-  {
-    if (value > zMax)
-      mSeekZ.setMax(zMax = value);
-    mSeekZ.setProgress(value);
-  }
-
   @Override
   public void onCreate(Bundle savedInstanceState)
   {
@@ -118,6 +62,12 @@ public class KinAmp extends Activity implements Loggable
     mSeekX = (SeekBar)findViewById(R.id.seekBarX);
     mSeekY = (SeekBar)findViewById(R.id.seekBarY);
     mSeekZ = (SeekBar)findViewById(R.id.seekBarZ);
+
+    mMaxMap = new HashMap<Dimension, Integer>();
+    mSeekBarMap = new HashMap<Dimension, SeekBar>();
+    mSeekBarMap.put(X_AXIS, mSeekX);
+    mSeekBarMap.put(Y_AXIS, mSeekY);
+    mSeekBarMap.put(Z_AXIS, mSeekZ);
 
     log = this;
 
@@ -142,7 +92,25 @@ public class KinAmp extends Activity implements Loggable
 
     mBluetooth = new BlueTooth(WII_TILT_DEVICE_NAME, this);
     mImu = new Imu(mBluetooth.getInputStream(), mBluetooth.getOutputStream());
-    mImu.addListner(mDebugListener);
+    mImu.addListner(new ImuListener()
+    {
+      public void onRaw(Dimension dimension, int value)
+      {
+        SeekBar seekBar = mSeekBarMap.get(dimension);
+        if (null != seekBar)
+        {
+          Integer max = mMaxMap.get(dimension);
+          if (null == max || value > max)
+          {
+            mMaxMap.put(dimension, value);
+            seekBar.setMax(value);
+          }
+            
+          seekBar.setProgress(value);
+        }
+      }
+    });
+
   }
   
   public void ping()

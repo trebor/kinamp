@@ -1,24 +1,15 @@
 package org.trebor.kinamp;
 
+import org.trebor.kinamp.Imu.Dimension;
+
 public class Dsp implements ImuListener
 {
-  public void onRawX(int x)
+  private int lowPass(int history, int sample, float filter)
   {
-  }
+    return (int)(history * filter + sample * (1 - filter));
+  }  
 
-  public void onRawY(int y)
-  {
-  }
-
-  public void onRawZ(int z)
-  {
-  }
-
-  public void onRawRotate(int rotate)
-  {
-  }
-
-  public void onRawBattery(int battery)
+  public void onRaw(Dimension dimension, int value)
   {
   }
 }

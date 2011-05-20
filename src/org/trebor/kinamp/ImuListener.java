@@ -1,10 +1,8 @@
 package org.trebor.kinamp;
 
+import org.trebor.kinamp.Imu.Dimension;
+
 public interface ImuListener
 {
-  void onRawX(int x);
-  void onRawY(int y);
-  void onRawZ(int z);
-  void onRawRotate(int rotate);
-  void onRawBattery(int battery);
+  void onRaw(Dimension dimension, int value);
 }
