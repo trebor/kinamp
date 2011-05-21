@@ -1,26 +1,55 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-  android:layout_width="match_parent" android:layout_height="match_parent"
-  android:orientation="vertical">
+  android:layout_width="match_parent" android:orientation="vertical"
+  android:layout_height="wrap_content">
   <LinearLayout android:id="@+id/linearLayout2"
     android:layout_width="wrap_content" android:orientation="horizontal"
     android:baselineAligned="true" android:layout_gravity="center"
     android:layout_height="wrap_content">
-    <ToggleButton android:id="@+id/imuToggle"
-      android:textOn="IMU" android:textOff="IMU" android:layout_width="wrap_content"
+    <ToggleButton android:textOn="6.0G" android:textOff="1.5G"
+      android:layout_width="wrap_content" android:layout_height="wrap_content"
+      android:id="@+id/gravityRange"></ToggleButton>
+    <ToggleButton android:id="@+id/rawToggle"
+      android:textOn="Raw" android:textOff="Raw" android:layout_width="wrap_content"
       android:layout_height="wrap_content" android:layout_gravity="center"></ToggleButton>
+    <ToggleButton android:id="@+id/gravityToggle"
+      android:textOn="Gravity" android:textOff="Gravity"
+      android:layout_width="wrap_content" android:layout_height="wrap_content"
+      android:layout_gravity="center"></ToggleButton>
     <Button android:id="@+id/beep" android:layout_width="wrap_content"
       android:text="@string/button_text" android:layout_weight="1"
       android:layout_gravity="center" android:layout_height="wrap_content"></Button>
   </LinearLayout>
-  <LinearLayout android:layout_height="wrap_content"
-    android:layout_width="match_parent" android:id="@+id/linearLayout1"
+  <LinearLayout android:id="@+id/linearLayout1"
+    android:layout_height="match_parent" android:layout_width="match_parent"
     android:orientation="horizontal">
     <TextView android:text="X: " android:textSize="20sp"
       android:layout_height="wrap_content" android:layout_width="wrap_content"
       android:id="@+id/textView1" android:textStyle="bold"></TextView>
-    <SeekBar android:id="@+id/seekBarX" android:layout_height="wrap_content"
-      android:layout_width="match_parent"></SeekBar>
+    <LinearLayout android:id="@+id/linearLayout3"
+      android:layout_width="match_parent" android:layout_height="wrap_content"
+      android:orientation="vertical">
+      <SeekBar android:id="@+id/seekBarX" android:layout_height="wrap_content"
+        android:layout_width="match_parent"></SeekBar>
+      <LinearLayout android:layout_height="wrap_content"
+        android:layout_width="match_parent" android:id="@+id/linearLayout4">
+        <TextView android:text="min: " android:id="@+id/textView2"
+          android:layout_height="wrap_content" android:layout_width="wrap_content"></TextView>
+        <TextView android:text="00000" android:id="@+id/minX"
+          android:layout_height="wrap_content" android:textStyle="bold"
+          android:layout_width="60dip"></TextView>
+        <TextView android:text="  val: " android:id="@+id/textView3"
+          android:layout_width="wrap_content" android:layout_height="wrap_content"></TextView>
+        <TextView android:text="00000" android:id="@+id/valueX"
+          android:textStyle="bold" android:layout_height="wrap_content"
+          android:layout_width="60dip"></TextView>
+        <TextView android:text="  max: " android:id="@+id/textView4"
+          android:layout_width="wrap_content" android:layout_height="wrap_content"></TextView>
+        <TextView android:text="00000" android:id="@+id/maxX"
+          android:textStyle="bold" android:layout_height="wrap_content"
+          android:layout_width="60dip"></TextView>
+      </LinearLayout>
+    </LinearLayout>
   </LinearLayout>
   <LinearLayout android:layout_height="wrap_content"
     android:layout_width="match_parent" android:id="@+id/linearLayout1"
@@ -28,8 +57,30 @@
     <TextView android:text="Y: " android:textSize="20sp"
       android:layout_height="wrap_content" android:layout_width="wrap_content"
       android:id="@+id/textView1" android:textStyle="bold"></TextView>
-    <SeekBar android:id="@+id/seekBarY" android:layout_height="wrap_content"
-      android:layout_width="match_parent"></SeekBar>
+    <LinearLayout android:id="@+id/linearLayout3"
+      android:layout_width="match_parent" android:orientation="vertical"
+      android:layout_height="wrap_content">
+      <SeekBar android:id="@+id/seekBarY" android:layout_height="wrap_content"
+        android:layout_width="match_parent"></SeekBar>
+      <LinearLayout android:layout_height="wrap_content"
+        android:layout_width="match_parent" android:id="@+id/linearLayout4">
+        <TextView android:text="min: " android:id="@+id/textView2"
+          android:layout_height="wrap_content" android:layout_width="wrap_content"></TextView>
+        <TextView android:text="00000" android:id="@+id/minY"
+          android:layout_height="wrap_content" android:textStyle="bold"
+          android:layout_width="60dip"></TextView>
+        <TextView android:text="  val: " android:id="@+id/textView3"
+          android:layout_width="wrap_content" android:layout_height="wrap_content"></TextView>
+        <TextView android:text="00000" android:id="@+id/valueY"
+          android:textStyle="bold" android:layout_width="60dip"
+          android:layout_height="wrap_content"></TextView>
+        <TextView android:text="  max: " android:id="@+id/textView4"
+          android:layout_width="wrap_content" android:layout_height="wrap_content"></TextView>
+        <TextView android:text="00000" android:id="@+id/maxY"
+          android:textStyle="bold" android:layout_width="60dip"
+          android:layout_height="wrap_content"></TextView>
+      </LinearLayout>
+    </LinearLayout>
   </LinearLayout>
   <LinearLayout android:layout_height="wrap_content"
     android:layout_width="match_parent" android:id="@+id/linearLayout1"
@@ -37,12 +88,35 @@
     <TextView android:text="Z: " android:textSize="20sp"
       android:layout_height="wrap_content" android:layout_width="wrap_content"
       android:id="@+id/textView1" android:textStyle="bold"></TextView>
-    <SeekBar android:id="@+id/seekBarZ" android:layout_height="wrap_content"
-      android:layout_width="match_parent"></SeekBar>
+    <LinearLayout android:id="@+id/linearLayout3"
+      android:layout_width="match_parent" android:orientation="vertical"
+      android:layout_height="wrap_content">
+      <SeekBar android:id="@+id/seekBarZ" android:layout_height="wrap_content"
+        android:layout_width="match_parent"></SeekBar>
+      <LinearLayout android:layout_height="wrap_content"
+        android:layout_width="match_parent" android:id="@+id/linearLayout4">
+        <TextView android:text="min: " android:id="@+id/textView2"
+          android:layout_height="wrap_content" android:layout_width="wrap_content"></TextView>
+        <TextView android:text="00000" android:id="@+id/minZ"
+          android:layout_height="wrap_content" android:textStyle="bold"
+          android:layout_width="60dip"></TextView>
+        <TextView android:text="  val: " android:id="@+id/textView3"
+          android:layout_width="wrap_content" android:layout_height="wrap_content"></TextView>
+        <TextView android:text="00000" android:id="@+id/valueZ"
+          android:textStyle="bold" android:layout_width="60dip"
+          android:layout_height="wrap_content"></TextView>
+        <TextView android:text="  max: " android:id="@+id/textView4"
+          android:layout_width="wrap_content" android:layout_height="wrap_content"></TextView>
+        <TextView android:text="00000" android:id="@+id/maxZ"
+          android:textStyle="bold" android:layout_width="60dip"
+          android:layout_height="wrap_content"></TextView>
+      </LinearLayout>
+    </LinearLayout>
   </LinearLayout>
   <ScrollView android:layout_height="match_parent"
     android:layout_width="match_parent" android:id="@+id/scrollView1">
     <TextView android:text="" android:layout_width="match_parent"
-      android:id="@+id/output" android:layout_height="match_parent" android:textStyle="bold" android:textSize="25sp" android:typeface="monospace"></TextView>
+      android:id="@+id/output" android:layout_height="match_parent"
+      android:textStyle="bold" android:textSize="25sp" android:typeface="monospace"></TextView>
   </ScrollView>
 </LinearLayout>

@@ -1,5 +1,7 @@
 package org.trebor.kinamp;
 
+import static org.trebor.kinamp.Imu.Dimension.*;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -14,6 +16,8 @@ import java.util.regex.Pattern;
 
 public class Imu
 {
+  private static Loggable log;
+  
   public static final String RAW_LINE_REGEX = "^(X=([\\d]*))?(Y=([\\d]*))?(Z=([\\d]*))?(B=([\\d]*))?(R=([\\d]*))?$";
   public static final String GRAVITY_LINE_REGEX = "^(X=([\\d\\.\\-]*))?(Y=([\\d\\.\\-]*))?(Z=([\\d\\.\\-]*))?(B=([\\d\\.\\-]*))?(R=([\\d\\-]*))?$";
 
@@ -25,15 +29,42 @@ public class Imu
   
   public static final char MAIN_MENU = ' ';
   public static final char START_DETECTION = '1';
+  public static final char SENSOR_RANGE_MENU = '4';
   public static final char MODE_MENU = '5';
   public static final char GRAVITY_MODE = '1';
   public static final char RAW_MODE = '2';
+  public static final char RANGE_1_5G_MODE = '1';
+  public static final char RANGE_6_0G_MODE = '2';
 
+  public enum GravityRange
+  {
+    LOW_GRAVITY(RANGE_1_5G_MODE, 1.5f), HIGH_GRAVITY(RANGE_6_0G_MODE, 6.0f);
+    
+    final private float mRange;
+    final private char[] mRangeCommand;
+    
+    GravityRange(char rangeCommand, float range)
+    {
+      mRangeCommand = new char[]{MAIN_MENU, SENSOR_RANGE_MENU, rangeCommand};
+      mRange = range;
+    }
+    
+    public char[] getConfigureCommand()
+    {
+      return mRangeCommand;
+    }
+
+    public float getRange()
+    {
+      return mRange;
+    }
+  }
+  
   public enum Mode
   {
     RAW(RAW_LINE_REGEX, RAW_MODE) {
       protected void signal(Dimension dimension, String value,
-        List<ImuListener> listeners)
+        List<ImuListener> listeners, GravityRange range)
       {
         int i = Integer.valueOf(value);
         for (ImuListener listener: listeners)
@@ -41,9 +72,13 @@ public class Imu
       }
     }, GRAVITY(GRAVITY_LINE_REGEX, GRAVITY_MODE) {
       protected void signal(Dimension dimension, String value,
-        List<ImuListener> listeners)
+        List<ImuListener> listeners, GravityRange range)
       {
         float f = Float.valueOf(value);
+        
+        if ((f < -range.getRange() || f > range.getRange()) && (dimension == X_AXIS || dimension == Y_AXIS || dimension == Z_AXIS))
+          return;
+        
         for (ImuListener listener: listeners)
           listener.onGravity(dimension, f);
       }
@@ -75,22 +110,23 @@ public class Imu
       return mStopCommand;
     }
 
-    public void processLine(String line, List<ImuListener> listeners)
+    public void processLine(final String line, final GravityRange range, final List<ImuListener> listeners)
     {
       Matcher m = parse(line);
       if (!m.find())
         return;
-      
-      for (Dimension dimension: Dimension.values())
+
+      for (Dimension dimension : Dimension.values())
       {
         String value = m.group(dimension.getParseGroup());
+
         if (null != value)
-          signal(dimension, value, listeners);
-      }
+             signal(dimension, value, listeners, range);
+         }
     }
 
     protected abstract void signal(Dimension dimension, String value,
-      List<ImuListener> listeners);
+      List<ImuListener> listeners, GravityRange range);
   }
   
   public enum Dimension
@@ -121,14 +157,16 @@ public class Imu
   private final BufferedReader mSource;
   private final BufferedWriter mSink;
   private Mode mMode;
+  private GravityRange mRange;
   private Thread mProcessThread;
-  
-  public Imu(InputStream inputStream, OutputStream outputStream)
+
+  public Imu(InputStream inputStream, OutputStream outputStream, Loggable log)
   {
     mSource = new BufferedReader(new InputStreamReader(inputStream));
     mSink = new BufferedWriter(new OutputStreamWriter(outputStream));
     mListeners = new ArrayList<ImuListener>();
     mProcessThread = null;
+    Imu.log = log;
   }
 
   public void addListner(ImuListener listener)
@@ -138,37 +176,49 @@ public class Imu
   
   protected void processImuData()
   {
-    while (null != mProcessThread)
+    try
     {
-      try
+      while (null != mProcessThread || mSource.ready())
       {
-        String line = mSource.readLine();
-        if (null != line)
-          mMode.processLine(line, mListeners);
-        else
-          stop();
+        try
+        {
+          String line = mSource.readLine();
+          if (null != line)
+            mMode.processLine(line, mRange, mListeners);
+          else
+            stop();
+        }
+        catch (IOException e)
+        {
+          e.printStackTrace();
+        }
       }
-      catch (IOException e)
-      {
-        e.printStackTrace();
-      }
+    }
+    catch (IOException e)
+    {
+      e.printStackTrace();
     }
   }
 
-  public void start(Mode mode, boolean block)
+  public void start(Mode mode, GravityRange range)
+  {
+    start(mode, range, false);
+  }
+  
+  public void start(Mode mode, GravityRange range, boolean block)
   {
     // stop if running 
     
     if (isRunning())
       stop();
     
-    // set mode
+    // set mode and range
     
     mMode = mode;
+    mRange = range;
     
-    // start data for this mode
+    // start a thread to capture data
     
-    startData();
     mProcessThread = new Thread()
     {
       public void run()
@@ -181,6 +231,7 @@ public class Imu
     
     synchronized (mProcessThread)
     {
+      startData();
       mProcessThread.start();
 
       if (block)
@@ -199,11 +250,14 @@ public class Imu
 
   public void stop()
   {
-    synchronized (mProcessThread)
+    if (null != mProcessThread)
     {
-      stopData();
-      mProcessThread.notifyAll();
-      mProcessThread = null;
+      synchronized (mProcessThread)
+      {
+        stopData();
+        mProcessThread.notifyAll();
+        mProcessThread = null;
+      }
     }
   }
 
@@ -214,6 +268,7 @@ public class Imu
 
   private void startData()
   {
+    sendCommand(mRange.getConfigureCommand());
     sendCommand(mMode.getStartCommand());
   }
   
@@ -224,14 +279,22 @@ public class Imu
 
   private void sendCommand(char[] command)
   {
-    try
+    synchronized (mProcessThread)
     {
-      mSink.write(command);
-      mSink.flush();
-    }
-    catch (IOException e1)
-    {
-      e1.printStackTrace();
+      try
+      {
+        mSink.write(command);
+        mSink.flush();
+        mProcessThread.wait(100);
+      }
+      catch (IOException e1)
+      {
+        e1.printStackTrace();
+      }
+      catch (InterruptedException e)
+      {
+        e.printStackTrace();
+      }
     }
   }
 }
