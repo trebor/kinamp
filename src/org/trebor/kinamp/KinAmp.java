@@ -11,6 +11,9 @@ import java.util.Map;
 
 import org.trebor.kinamp.Imu.Dimension;
 import org.trebor.kinamp.Imu.GravityRange;
+import org.trebor.kinamp.dsp.Action;
+import org.trebor.kinamp.dsp.BumpMonitor;
+import org.trebor.kinamp.dsp.Dsp;
 
 import android.app.Activity;
 import android.os.Bundle;
@@ -51,6 +54,7 @@ public class KinAmp extends Activity implements Loggable
   private BlueTooth mBluetooth;
   private NoiseBox mNoiseBox;
   private Imu mImu;
+  private Dsp mDsp;
 
   class DimensionUi
   {
@@ -159,6 +163,7 @@ public class KinAmp extends Activity implements Loggable
           {
             ui.mRange.reset();
             ui.mSeekBar.setMax(0);
+            ui.mSeekBar.setProgress(0);
             ui.mMin.setText("0");
           }
           
@@ -187,6 +192,7 @@ public class KinAmp extends Activity implements Loggable
           {
             ui.mRange.reset();
             ui.mSeekBar.setMax(GRAVITY_BAR_RANGE);
+            ui.mSeekBar.setProgress(0);
           }
           
           mRawToggle.setEnabled(false);
@@ -214,6 +220,7 @@ public class KinAmp extends Activity implements Loggable
           {
             ui.mRange.reset();
             ui.mSeekBar.setMax(300);
+            ui.mSeekBar.setProgress(0);
           }
           
           mRawToggle.setEnabled(false);
@@ -295,6 +302,15 @@ public class KinAmp extends Activity implements Loggable
         });
       }
     });
+    
+    mDsp = new Dsp(mImu);
+    mDsp.addMonitor(new BumpMonitor(BATTARY, new Action<BumpMonitor>()
+      {
+        public void execute(BumpMonitor monitor)
+        {
+          log.debug("Battery!");
+        }
+      }));
   }
 
   public GravityRange getGravityRange()

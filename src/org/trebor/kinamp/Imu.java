@@ -16,6 +16,7 @@ import java.util.regex.Pattern;
 
 public class Imu
 {
+  @SuppressWarnings("unused")
   private static Loggable log;
   
   public static final String RAW_LINE_REGEX = "^(X=([\\d]*))?(Y=([\\d]*))?(Z=([\\d]*))?(B=([\\d]*))?(R=([\\d]*))?$";

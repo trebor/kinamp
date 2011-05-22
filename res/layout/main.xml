@@ -18,10 +18,10 @@
       android:layout_gravity="center"></ToggleButton>
     <ToggleButton android:textOn="Degree" android:textOff="Degree"
       android:id="@+id/degreeToggle" android:layout_width="wrap_content"
-      android:layout_height="wrap_content"></ToggleButton>
+      android:layout_height="wrap_content" android:layout_gravity="center"></ToggleButton>
     <Button android:id="@+id/beep" android:layout_width="wrap_content"
       android:text="@string/button_text" android:layout_weight="1"
-      android:layout_gravity="center" android:layout_height="wrap_content"></Button>
+      android:layout_height="wrap_content" android:layout_gravity="center"></Button>
   </LinearLayout>
   <LinearLayout android:id="@+id/linearLayout1"
     android:layout_height="match_parent" android:layout_width="match_parent"
