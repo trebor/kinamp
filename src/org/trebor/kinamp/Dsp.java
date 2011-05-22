@@ -17,4 +17,8 @@ public class Dsp implements ImuListener
   public void onGravity(Dimension dimension, float value)
   {
   }
+
+  public void onDegree(Dimension dimension, float value)
+  {
+  }
 }

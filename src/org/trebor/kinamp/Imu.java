@@ -20,12 +20,21 @@ public class Imu
   
   public static final String RAW_LINE_REGEX = "^(X=([\\d]*))?(Y=([\\d]*))?(Z=([\\d]*))?(B=([\\d]*))?(R=([\\d]*))?$";
   public static final String GRAVITY_LINE_REGEX = "^(X=([\\d\\.\\-]*))?(Y=([\\d\\.\\-]*))?(Z=([\\d\\.\\-]*))?(B=([\\d\\.\\-]*))?(R=([\\d\\-]*))?$";
+  public static final String DEGREE_LINE_REGEX = "^(X=([\\d]*))?(Y=([\\d]*))?(R=([\\d\\-]*))?(B=([\\d\\.]*))?$";
 
+  public static final int NO_GROUP = -1;
+  
   public static final int X_GROUP = 2;
   public static final int Y_GROUP = 4;
   public static final int Z_GROUP = 6;
   public static final int B_GROUP = 8;
   public static final int R_GROUP = 10;
+
+  public static final int X_GROUP_DEGREE_MODE = 2;
+  public static final int Y_GROUP_DEGREE_MODE = 4;
+  public static final int R_GROUP_DEGREE_MODE = 6;
+  public static final int B_GROUP_DEGREE_MODE = 8;
+  public static final int Z_GROUP_DEGREE_MODE = NO_GROUP;
   
   public static final char MAIN_MENU = ' ';
   public static final char START_DETECTION = '1';
@@ -33,6 +42,8 @@ public class Imu
   public static final char MODE_MENU = '5';
   public static final char GRAVITY_MODE = '1';
   public static final char RAW_MODE = '2';
+  public static final char BINARY_MODE = '3';
+  public static final char DEGREE_MODE = '4';
   public static final char RANGE_1_5G_MODE = '1';
   public static final char RANGE_6_0G_MODE = '2';
 
@@ -62,7 +73,7 @@ public class Imu
   
   public enum Mode
   {
-    RAW(RAW_LINE_REGEX, RAW_MODE) {
+    RAW(RAW_LINE_REGEX, RAW_MODE, false) {
       protected void signal(Dimension dimension, String value,
         List<ImuListener> listeners, GravityRange range)
       {
@@ -70,7 +81,7 @@ public class Imu
         for (ImuListener listener: listeners)
           listener.onRaw(dimension, i);
       }
-    }, GRAVITY(GRAVITY_LINE_REGEX, GRAVITY_MODE) {
+    }, GRAVITY(GRAVITY_LINE_REGEX, GRAVITY_MODE, false) {
       protected void signal(Dimension dimension, String value,
         List<ImuListener> listeners, GravityRange range)
       {
@@ -82,17 +93,29 @@ public class Imu
         for (ImuListener listener: listeners)
           listener.onGravity(dimension, f);
       }
+    }, DEGREE(DEGREE_LINE_REGEX, DEGREE_MODE, true) {
+      protected void signal(Dimension dimension, String value,
+        List<ImuListener> listeners, GravityRange range)
+      {
+        float f = Float.valueOf(value);
+        
+        for (ImuListener listener: listeners)
+          listener.onDegree(dimension, f);
+      }
     };
+    
     
     private final Pattern mPattern;
     private final char[] mStartCommand;
     private final char[] mStopCommand;
+    private final boolean mDegreeMode;
     
-    Mode(String lineRegex, char modeSelect)
+    Mode(String lineRegex, char modeSelect, boolean degreeMode)
     {
       mPattern = Pattern.compile(lineRegex);
       mStartCommand = new char[]{MAIN_MENU, MODE_MENU, modeSelect, START_DETECTION};
       mStopCommand = new char[]{MAIN_MENU};
+      mDegreeMode = degreeMode;
     }
     
     public Matcher parse(String line)
@@ -109,8 +132,9 @@ public class Imu
     {
       return mStopCommand;
     }
-
-    public void processLine(final String line, final GravityRange range, final List<ImuListener> listeners)
+    
+    public void processLine(final String line, final GravityRange range,
+      final List<ImuListener> listeners)
     {
       Matcher m = parse(line);
       if (!m.find())
@@ -118,11 +142,16 @@ public class Imu
 
       for (Dimension dimension : Dimension.values())
       {
-        String value = m.group(dimension.getParseGroup());
+        int parseGroup = dimension.getParseGroup(mDegreeMode);
+        if (parseGroup == NO_GROUP)
+          continue;
 
-        if (null != value)
-             signal(dimension, value, listeners, range);
-         }
+        String value = m.group(parseGroup);
+        if (null == value)
+          continue;
+        
+        signal(dimension, value, listeners, range);
+      }
     }
 
     protected abstract void signal(Dimension dimension, String value,
@@ -131,22 +160,27 @@ public class Imu
   
   public enum Dimension
   {
-    X_AXIS(X_GROUP, "X"), Y_AXIS(Y_GROUP, "Y"), Z_AXIS(Z_GROUP, "Z"), BATTARY(B_GROUP, "BATTARY"), ROTATION(R_GROUP, "ROTATE");
-    
+    X_AXIS(X_GROUP, X_GROUP_DEGREE_MODE, "X"), Y_AXIS(Y_GROUP,
+      Y_GROUP_DEGREE_MODE, "Y"), Z_AXIS(Z_GROUP, Z_GROUP_DEGREE_MODE, "Z"),
+    BATTARY(B_GROUP, B_GROUP_DEGREE_MODE, "BATTARY"), ROTATION(R_GROUP,
+      R_GROUP_DEGREE_MODE, "ROTATE");
+
     private final int mParseGroup;
+    private final int mParseGroupDegreeMode;
     private final String mName;
 
-    Dimension(int parseGroup, String name)
+    Dimension(int parseGroup, int parseGroupDegreeMode, String name)
     {
       mParseGroup = parseGroup;
+      mParseGroupDegreeMode = parseGroupDegreeMode;
       mName = name;
     }
 
-    public int getParseGroup()
+    public int getParseGroup(boolean inDegreeMode)
     {
-      return mParseGroup;
+      return inDegreeMode ? mParseGroupDegreeMode : mParseGroup;
     }
-    
+
     public String toString()
     {
       return mName;

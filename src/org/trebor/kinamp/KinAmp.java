@@ -40,6 +40,7 @@ public class KinAmp extends Activity implements Loggable
   private Button mBeep;
   private ToggleButton mRawToggle;
   private ToggleButton mGravityToggle;
+  private ToggleButton mDegreeToggle;
   private ToggleButton mGravityRange;
   private TextView mOutput;
   private ScrollView mOutputScroll;
@@ -127,6 +128,7 @@ public class KinAmp extends Activity implements Loggable
     mBeep = (Button)findViewById(R.id.beep);
     mRawToggle = (ToggleButton)findViewById(R.id.rawToggle);
     mGravityToggle = (ToggleButton)findViewById(R.id.gravityToggle);
+    mDegreeToggle = (ToggleButton)findViewById(R.id.degreeToggle);
     mGravityRange = (ToggleButton)findViewById(R.id.gravityRange);
     mOutput = (TextView)findViewById(R.id.output);
     mOutputScroll = (ScrollView)findViewById(R.id.scrollView1);
@@ -161,12 +163,14 @@ public class KinAmp extends Activity implements Loggable
           }
           
           mGravityToggle.setEnabled(false);
+          mDegreeToggle.setEnabled(false);
           mGravityRange.setEnabled(false);
           mImu.start(RAW, getGravityRange());
         }
         else
         {
           mGravityToggle.setEnabled(true);
+          mDegreeToggle.setEnabled(true);
           mGravityRange.setEnabled(true);
           mImu.stop();
         }
@@ -186,12 +190,41 @@ public class KinAmp extends Activity implements Loggable
           }
           
           mRawToggle.setEnabled(false);
+          mDegreeToggle.setEnabled(false);
           mGravityRange.setEnabled(false);
           mImu.start(GRAVITY, getGravityRange());
         }
         else
         {
           mRawToggle.setEnabled(true);
+          mDegreeToggle.setEnabled(true);
+          mGravityRange.setEnabled(true);
+          mImu.stop();
+        }
+      }
+    });
+
+    mDegreeToggle.setOnClickListener(new OnClickListener()
+    {
+      public void onClick(View v)
+      {
+        if (mDegreeToggle.isChecked())
+        {
+          for (DimensionUi ui: mUiMap.values())
+          {
+            ui.mRange.reset();
+            ui.mSeekBar.setMax(300);
+          }
+          
+          mRawToggle.setEnabled(false);
+          mGravityToggle.setEnabled(false);
+          mGravityRange.setEnabled(false);
+          mImu.start(DEGREE, getGravityRange());
+        }
+        else
+        {
+          mRawToggle.setEnabled(true);
+          mGravityToggle.setEnabled(true);
           mGravityRange.setEnabled(true);
           mImu.stop();
         }
@@ -238,6 +271,26 @@ public class KinAmp extends Activity implements Loggable
             ui.mValue.setText("" + value);
             ui.mMin.setText("" + ui.mRange.getMin());
             ui.mSeekBar.setProgress((int)(normal * GRAVITY_BAR_RANGE));
+          }
+        });
+      }
+
+      public void onDegree(final Dimension dimension, final float value)
+      {
+        final DimensionUi ui = mUiMap.get(dimension);
+        if (null == ui)
+          return;
+
+        executeOnUi(new Runnable()
+        {
+          public void run()
+          {
+             ui.mRange.register(value);
+
+            ui.mMax.setText("" + ui.mRange.getMax());
+            ui.mValue.setText("" + value);
+            ui.mMin.setText("" + ui.mRange.getMin());
+            ui.mSeekBar.setProgress((int)value);
           }
         });
       }
