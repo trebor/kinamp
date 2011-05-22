@@ -64,5 +64,7 @@ public class Dsp implements ImuListener
     List<Monitor> monitors = dimensionMonitorsMap.get(dimension);
     if (null == monitors)
       return;
+    for (Monitor monitor: monitors)
+      monitor.sample(value);
   }
 }

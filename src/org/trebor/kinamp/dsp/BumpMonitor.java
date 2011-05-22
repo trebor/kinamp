@@ -8,7 +8,7 @@ public class BumpMonitor extends AbstractMonitor<BumpMonitor>
 {
   public BumpMonitor(Dimension dimension, Action<BumpMonitor> action)
   {
-    super(dimension, GRAVITY, action);
+    super(GRAVITY, dimension, action);
   }
 
   public void sample(float value)

@@ -9,7 +9,7 @@ public abstract class AbstractMonitor<T extends Monitor> implements Monitor
   private final Action<T> mAction;
   private final Mode mMode;
   
-  public AbstractMonitor(Dimension dimension, Mode mode, Action<T> action)
+  public AbstractMonitor(Mode mode, Dimension dimension, Action<T> action)
   {
     mDimension = dimension;
     mAction = action;
