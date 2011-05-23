@@ -8,6 +8,7 @@ import static org.trebor.kinamp.R.id.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.trebor.kinamp.Imu.Dimension;
 import org.trebor.kinamp.Imu.GravityRange;
@@ -16,6 +17,7 @@ import org.trebor.kinamp.dsp.BumpMonitor;
 import org.trebor.kinamp.dsp.Dsp;
 
 import android.app.Activity;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -142,7 +144,11 @@ public class KinAmp extends Activity implements Loggable
     mUiMap.put(X_AXIS, new DimensionUi(seekBarX, minX, valueX, maxX));
     mUiMap.put(Y_AXIS, new DimensionUi(seekBarY, minY, valueY, maxY));
     mUiMap.put(Z_AXIS, new DimensionUi(seekBarZ, minZ, valueZ, maxZ));
-
+    mGravityRange.setChecked(true);
+    
+    final DimensionUi unknown = new DimensionUi(seekBarUk, minUk, valueUk, maxUk);
+    unknown.mSeekBar.setMax(100);
+    
     log = this;
 
     mBeep.setOnClickListener(new OnClickListener()
@@ -304,13 +310,58 @@ public class KinAmp extends Activity implements Loggable
     });
     
     mDsp = new Dsp(mImu);
-    mDsp.addMonitor(new BumpMonitor(BATTARY, new Action<BumpMonitor>()
+    mDsp.addMonitor(new BumpMonitor(Y_AXIS, new Action<BumpMonitor>()
+    {
+      float o1 = 0.5f;
+      float o2 = 0.5f;
+      AtomicBoolean p1 = null;
+      AtomicBoolean p2 = null;
+
+      public void execute(BumpMonitor monitor)
       {
-        public void execute(BumpMonitor monitor)
+        final float value = monitor.getFilterHistory();
+        final float THRESH = 0.1f;
+        
+        final float n = unknown.mRange.normal(value);
+
+        float d1 = n - o1;
+        float d2 = o1 - o2;
+        
+        if (d1 > THRESH && d2 > THRESH && d1 > d2)
         {
-          log.debug("Battery!");
+//          if (p1 == null || p1.get())
+            p1 = mNoiseBox.play(COWBELL1);
         }
-      }));
+        if (d1 < -THRESH && d2 < -THRESH && d1 > d2)
+        {
+//          if (p2 == null || p2.get())
+            p2 = mNoiseBox.play(COWBELL2);
+        }
+
+        o2 = o1;
+        o1 = n;
+        
+        executeOnUi(new Runnable()
+        {
+          public void run()
+          {
+//            unknown.mMax.setText(ff(d1));
+//            unknown.mValue.setText(ff(n));
+//            unknown.mMin.setText(ff(d2));
+
+             unknown.mMax.setText(ff(unknown.mRange.getMax()));
+             unknown.mValue.setText(ff(value));
+             unknown.mMin.setText(ff(unknown.mRange.getMin()));
+            unknown.mSeekBar.setProgress((int)(n * 100));
+          }
+        });
+      }
+
+      private String ff(float value)
+      {
+        return "" + (Math.floor(value * 100) / 100);
+      }
+    }));
   }
 
   public GravityRange getGravityRange()

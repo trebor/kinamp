@@ -26,6 +26,37 @@
   <LinearLayout android:id="@+id/linearLayout1"
     android:layout_height="match_parent" android:layout_width="match_parent"
     android:orientation="horizontal">
+    <TextView android:text="\?: " android:textSize="20sp"
+      android:layout_height="wrap_content" android:layout_width="wrap_content"
+      android:id="@+id/textView1" android:textStyle="bold"></TextView>
+    <LinearLayout android:id="@+id/linearLayout3"
+      android:layout_width="match_parent" android:layout_height="wrap_content"
+      android:orientation="vertical">
+      <SeekBar android:id="@+id/seekBarUk"
+        android:layout_height="wrap_content" android:layout_width="match_parent"></SeekBar>
+      <LinearLayout android:layout_height="wrap_content"
+        android:layout_width="match_parent" android:id="@+id/linearLayout4">
+        <TextView android:text="min: " android:id="@+id/textView2"
+          android:layout_height="wrap_content" android:layout_width="wrap_content"></TextView>
+        <TextView android:text="00000" android:id="@+id/minUk"
+          android:layout_height="wrap_content" android:textStyle="bold"
+          android:layout_width="60dip"></TextView>
+        <TextView android:text="  val: " android:id="@+id/textView3"
+          android:layout_width="wrap_content" android:layout_height="wrap_content"></TextView>
+        <TextView android:text="00000" android:id="@+id/valueUk"
+          android:textStyle="bold" android:layout_height="wrap_content"
+          android:layout_width="60dip"></TextView>
+        <TextView android:text="  max: " android:id="@+id/textView4"
+          android:layout_width="wrap_content" android:layout_height="wrap_content"></TextView>
+        <TextView android:text="00000" android:id="@+id/maxUk"
+          android:textStyle="bold" android:layout_height="wrap_content"
+          android:layout_width="60dip"></TextView>
+      </LinearLayout>
+    </LinearLayout>
+  </LinearLayout>
+  <LinearLayout android:id="@+id/linearLayout1"
+    android:layout_height="match_parent" android:layout_width="match_parent"
+    android:orientation="horizontal">
     <TextView android:text="X: " android:textSize="20sp"
       android:layout_height="wrap_content" android:layout_width="wrap_content"
       android:id="@+id/textView1" android:textStyle="bold"></TextView>

@@ -33,7 +33,7 @@ public abstract class AbstractMonitor<T extends Monitor> implements Monitor
   
   protected static float lowPass(float history, float sample, float filter)
   {
-    return history * filter + sample * (1 - filter);
+    return (history * filter) + (sample * (1 - filter));
   }
 
   public abstract void sample(float value);

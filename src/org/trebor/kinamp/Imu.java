@@ -88,8 +88,10 @@ public class Imu
       {
         float f = Float.valueOf(value);
         
-        if ((f < -range.getRange() || f > range.getRange()) && (dimension == X_AXIS || dimension == Y_AXIS || dimension == Z_AXIS))
-          return;
+        float r = range.getRange();
+        
+        if ((f < -r || f > r) && (dimension == X_AXIS || dimension == Y_AXIS || dimension == Z_AXIS))
+          f = Math.max(Math.min(f, r), -r);
         
         for (ImuListener listener: listeners)
           listener.onGravity(dimension, f);

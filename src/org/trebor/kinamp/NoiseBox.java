@@ -1,5 +1,7 @@
 package org.trebor.kinamp;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import android.content.Context;
 import android.media.MediaPlayer;
 
@@ -33,24 +35,26 @@ public class NoiseBox
     mContext = context;
   }
   
-  public void play(Sound sound)
+  public AtomicBoolean play(Sound sound)
   {
-    play(sound, 1, 1);
+    return play(sound, 1, 1);
   }
   
-  public void play(Sound sound, float level)
+  public AtomicBoolean play(Sound sound, float level)
   {
-    play(sound, level, level);
+    return play(sound, level, level);
   }
   
-  public void play(final Sound sound, final float leftLevel, final float rightLevel)
+  public AtomicBoolean play(final Sound sound, final float leftLevel, final float rightLevel)
   {
+    final MediaPlayer player = MediaPlayer.create(mContext, sound.getResourceId());
+    final AtomicBoolean isDone = new AtomicBoolean(false);
+    
     new Thread()
     {
       public void run()
       {
-        MediaPlayer player = MediaPlayer.create(mContext, sound.getResourceId());
-        logger.debug("start: %d", sound.getResourceId());
+        //logger.debug("start: %d", sound.getResourceId());
         player.setVolume(leftLevel, rightLevel);
         player.start();
         synchronized (player)
@@ -66,8 +70,12 @@ public class NoiseBox
           }
         }
         player.release();
-        logger.debug("end: %d", sound.getResourceId());
+        isDone.set(true);
+        
+        //logger.debug("end: %d", sound.getResourceId());
       }
     }.start();
+    
+    return isDone;
   }
 }
