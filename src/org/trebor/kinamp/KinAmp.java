@@ -17,7 +17,7 @@ import org.trebor.kinamp.dsp.BumpMonitor;
 import org.trebor.kinamp.dsp.Dsp;
 
 import android.app.Activity;
-import android.media.MediaPlayer;
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -29,17 +29,15 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.ToggleButton;
 
-public class KinAmp extends Activity implements Loggable
+public class KinAmp extends Activity
 {
-  private static final int GRAVITY_BAR_RANGE = 100;
-
-  @SuppressWarnings("unused")
-  private Loggable log;
-
- // device name
+ // constants
 
   public static final String WII_TILT_DEVICE_NAME = "FireFly-AAF0";
+  private static final int GRAVITY_BAR_RANGE = 100;
 
+  private boolean mDisableBlueTooth = false;
+  
   // UI elements
   
   private Button mBeep;
@@ -127,10 +125,9 @@ public class KinAmp extends Activity implements Loggable
   public void onCreate(Bundle savedInstanceState)
   {
     super.onCreate(savedInstanceState);
-
-    mNoiseBox = new NoiseBox(this, getApplicationContext());
-
     setContentView(R.layout.main);
+
+    mNoiseBox = new NoiseBox(getApplicationContext());
     mBeep = (Button)findViewById(R.id.beep);
     mRawToggle = (ToggleButton)findViewById(R.id.rawToggle);
     mGravityToggle = (ToggleButton)findViewById(R.id.gravityToggle);
@@ -149,13 +146,13 @@ public class KinAmp extends Activity implements Loggable
     final DimensionUi unknown = new DimensionUi(seekBarUk, minUk, valueUk, maxUk);
     unknown.mSeekBar.setMax(100);
     
-    log = this;
-
     mBeep.setOnClickListener(new OnClickListener()
     {
       public void onClick(View v)
       {
-        ping();
+        //setContentView(R.layout.graph);        
+        Intent graphIntent = new Intent(KinAmp.this, Graph.class);
+        startActivityForResult(graphIntent, 0);
       }
     });
 
@@ -225,7 +222,7 @@ public class KinAmp extends Activity implements Loggable
           for (DimensionUi ui: mUiMap.values())
           {
             ui.mRange.reset();
-            ui.mSeekBar.setMax(300);
+            ui.mSeekBar.setMax(360);
             ui.mSeekBar.setProgress(0);
           }
           
@@ -244,8 +241,11 @@ public class KinAmp extends Activity implements Loggable
       }
     });
 
-    mBluetooth = new BlueTooth(WII_TILT_DEVICE_NAME, this);
-    mImu = new Imu(mBluetooth.getInputStream(), mBluetooth.getOutputStream(), this);
+    if (mDisableBlueTooth)
+      return;
+    
+    mBluetooth = new BlueTooth(WII_TILT_DEVICE_NAME);
+    mImu = new Imu(mBluetooth.getInputStream(), mBluetooth.getOutputStream());
     mImu.addListner(new ImuListener()
     {
       public void onRaw(final Dimension dimension, final int value)
@@ -416,38 +416,5 @@ public class KinAmp extends Activity implements Loggable
   private void executeOnUi(Runnable action)
   {
     handleRunable.sendMessage(handleRunable.obtainMessage(0, action));
-  }
-  
-  private String log(String format, Object...args)
-  {
-     final String message = String.format(format + "\n", args);
-    executeOnUi(new Runnable()
-    {
-      public void run()
-      {
-        mOutput.append(message);
-        mOutputScroll.fullScroll(ScrollView.FOCUS_DOWN);
-      }
-    });
-     
-     
-//     Message m = handleMessage.obtainMessage(0, message);
-//     handleMessage.sendMessage(m);
-    return message;
-  }
-  
-  public String debug(String format, Object... args)
-  {
-    return log(format, args);
-  }
-  
-  public String error(String format, Object... args)
-  {
-    return log("ERROR: " + format, args);
-  }
-  
-  public String error(Throwable exception, String format, Object... args)
-  {
-    return log("ERROR - " + exception.getMessage() + ": " + format, args);
   }
 }

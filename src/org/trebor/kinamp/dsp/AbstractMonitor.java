@@ -31,10 +31,5 @@ public abstract class AbstractMonitor<T extends Monitor> implements Monitor
     mAction.execute(monitor);
   }
   
-  protected static float lowPass(float history, float sample, float filter)
-  {
-    return (history * filter) + (sample * (1 - filter));
-  }
-
   public abstract void sample(float value);
 }

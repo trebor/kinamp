@@ -7,7 +7,6 @@ import android.media.MediaPlayer;
 
 public class NoiseBox
 {
-  private final Loggable logger;
   private final Context mContext;
 
   public enum Sound
@@ -29,9 +28,8 @@ public class NoiseBox
     }
   }
   
-  public NoiseBox(Loggable logger, Context context)
+  public NoiseBox(Context context)
   {
-    this.logger = logger;
     mContext = context;
   }
   

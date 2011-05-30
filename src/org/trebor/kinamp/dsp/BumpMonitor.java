@@ -1,6 +1,7 @@
 package org.trebor.kinamp.dsp;
 
 import static org.trebor.kinamp.Imu.Mode.*;
+import static org.trebor.kinamp.dsp.DspUtil.*;
 
 import org.trebor.kinamp.Imu.Dimension;
 

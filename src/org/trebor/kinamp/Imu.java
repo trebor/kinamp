@@ -14,11 +14,12 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import android.util.Log;
+
 public class Imu
 {
-  @SuppressWarnings("unused")
-  private static Loggable log;
-  
+  private final String T = "+" + getClass().getSimpleName().toString();
+
   public static final String RAW_LINE_REGEX = "^(X=([\\d]*))?(Y=([\\d]*))?(Z=([\\d]*))?(B=([\\d]*))?(R=([\\d]*))?$";
   public static final String GRAVITY_LINE_REGEX = "^(X=([\\d\\.\\-]*))?(Y=([\\d\\.\\-]*))?(Z=([\\d\\.\\-]*))?(B=([\\d\\.\\-]*))?(R=([\\d\\-]*))?$";
   public static final String DEGREE_LINE_REGEX = "^(X=([\\d]*))?(Y=([\\d]*))?(R=([\\d\\-]*))?(B=([\\d\\.]*))?$";
@@ -197,13 +198,12 @@ public class Imu
   private GravityRange mRange;
   private Thread mProcessThread;
 
-  public Imu(InputStream inputStream, OutputStream outputStream, Loggable log)
+  public Imu(InputStream inputStream, OutputStream outputStream)
   {
     mSource = new BufferedReader(new InputStreamReader(inputStream));
     mSink = new BufferedWriter(new OutputStreamWriter(outputStream));
     mListeners = new ArrayList<ImuListener>();
     mProcessThread = null;
-    Imu.log = log;
   }
 
   public void addListner(ImuListener listener)

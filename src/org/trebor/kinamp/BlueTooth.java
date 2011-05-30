@@ -1,5 +1,7 @@
 package org.trebor.kinamp;
 
+import static java.lang.String.format;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -8,20 +10,21 @@ import java.util.UUID;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
+import android.util.Log;
 
 public class BlueTooth
 {
-  private final Loggable log;
+  private final String T = "+" + getClass().getSimpleName().toString();
+  
   private BluetoothAdapter mBluetoothAdapter;
   private final String mDeviceName;
   private BluetoothDevice mDevice;
   private BluetoothSocket mSocket;
   private static final UUID mUuid = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
   
-  public BlueTooth(String deviceName, Loggable loggable)
+  public BlueTooth(String deviceName)
   {
     mDeviceName = deviceName;
-    log = loggable;
     init();
   }
 
@@ -37,8 +40,7 @@ public class BlueTooth
     try
     {
       mDevice = getDevice(mDeviceName);
-      log.debug("device: %s (%s) (%s)", mDevice.getName(), mDevice.getAddress(), mDevice.getBondState());
-      log.debug("device: %s", mDevice);
+      Log.d(T, format("device: %s (%s) (%s)", mDevice.getName(), mDevice.getAddress(), mDevice.getBondState()));
       mSocket = mDevice.createRfcommSocketToServiceRecord(mUuid);
       mSocket.connect();
       //log.debug("socket: %s", mSocket.get
