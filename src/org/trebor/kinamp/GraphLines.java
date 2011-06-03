@@ -5,7 +5,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-class GraphLines<Key>
+public class GraphLines<Key>
 {
   private final Map<Key, GraphLine> mLines;
   private final int mLength;

@@ -4,7 +4,7 @@
   android:layout_width="match_parent"
   android:layout_height="match_parent">
     <org.trebor.kinamp.GraphView
-      android:id="@+id/graph"
+      android:id="@+id/graph_old"
       android:layout_width="match_parent"
       android:layout_height="match_parent"/>
 </FrameLayout>

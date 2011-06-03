@@ -3,14 +3,11 @@ package org.trebor.kinamp;
 import static org.trebor.kinamp.GraphView.State.*;
 import static java.lang.String.format;
 
-import org.trebor.kinamp.dsp.Dsp;
-
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Paint.Style;
-import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.SurfaceHolder;
@@ -30,11 +27,11 @@ public class GraphView extends SurfaceView implements SurfaceHolder.Callback
   private final String T = "+" + getClass().getSimpleName().toString();
   
   private SurfaceHolder mSurfaceHolder;
-  private int mCanvasWidth;
-  private int mCanvasHeight;
+  private int mWidth;
+  private int mHeight;
   private GraphLines<Integer> mLines;
-  private Dsp mDsp;
   private State mState;
+  private Thread mPaintThread;
   
   public enum State
   {
@@ -47,14 +44,42 @@ public class GraphView extends SurfaceView implements SurfaceHolder.Callback
 
     // assume view is hidden
     
-    mState = HIDDEN;
+    setState(HIDDEN);
     
     // register our interest in hearing about changes to our surface
 
     mSurfaceHolder = getHolder();
     mSurfaceHolder.addCallback(this);
+    mPaintThread = new Thread()
+    {
+      @Override
+      public void run()
+      {
+        runPaintThread();
+      }
+
+    };
   }
 
+  private void runPaintThread()
+  {
+    while (getState() == SHOWING)
+    {
+      try
+      {
+        synchronized (mLines)
+        {
+          mLines.wait();
+        }
+        paint();
+      }
+      catch (InterruptedException e)
+      {
+        e.printStackTrace();
+      }
+    }
+  }
+  
   public void registerSample(int color, float sample)
   {
     synchronized (mSurfaceHolder)
@@ -64,26 +89,70 @@ public class GraphView extends SurfaceView implements SurfaceHolder.Callback
     }
   }
 
-  //@Override
+  public void repaint()
+  {
+    synchronized (mLines)
+    {
+      mLines.notify();
+    }
+ }
+  
+  private void paint()
+  {
+    if (getState() != SHOWING)
+      return;
+
+    Canvas c = null;
+    try
+    {
+      c = mSurfaceHolder.lockCanvas(null);
+      synchronized (mSurfaceHolder)
+      {
+        paint(c);
+      }
+    }
+    finally
+    {
+      if (c != null)
+        mSurfaceHolder.unlockCanvasAndPost(c);
+    }
+  }
+
   private void paint(Canvas canvas)
   {
-    //canvas.s
     Paint paint = new Paint();
     paint.setStyle(Style.FILL);
-    paint.setColor(Color.RED);
     paint.setAntiAlias(true);
+    paint.setColor(Color.BLACK);
+    canvas.drawRect(canvas.getClipBounds(), paint);
     
-    Log.d(T, format("w: %d h: %d", mCanvasWidth, mCanvasHeight));
-    RectF oval = new RectF(0, 0, mCanvasWidth, mCanvasHeight);
-    canvas.drawOval(oval, paint);
+    //RectF oval = new RectF(0, 0, mWidth, mHeight);
+    //canvas.drawOval(oval, paint);
     
-    paint.setColor(Color.GREEN);
-    canvas.drawCircle(50, 50, 25, paint);
-    // Draw the ship with its current rotation
-    // canvas.save();
-    // canvas.rotate((float) mHeading, (float) mX, mCanvasHeight- (float)
-    // mY);
-    // canvas.restore();
+    //paint.setColor(Color.GREEN);
+    //canvas.drawCircle(50, 50, 25, paint);
+    
+    paint.setStyle(Style.STROKE);
+    for (int color: mLines.getKeys())
+    {
+      paint.setColor(color);
+      int x = 0;
+      int old = Integer.MAX_VALUE;
+      for (float value: mLines.getNormalized(color))
+      {
+        if (value < 0 || value > 1)
+          Log.d(T, "value: " + value);
+        
+        int corrected = (int)(mHeight * value);
+        if (old == Integer.MAX_VALUE)
+          canvas.drawPoint(x, corrected, paint);
+        else
+          canvas.drawLine(x - 1, old, x, corrected, paint);
+        
+        ++x;
+        old = corrected;
+      }
+    }
   }
 
   /**
@@ -96,9 +165,9 @@ public class GraphView extends SurfaceView implements SurfaceHolder.Callback
   {
     synchronized (mSurfaceHolder)
     {
-      mState = hasWindowFocus
-        ? SHOWING
-        : HIDDEN;
+      //setState(hasWindowFocus
+//        ? SHOWING
+//        : HIDDEN);
     }
   }
 
@@ -110,9 +179,10 @@ public class GraphView extends SurfaceView implements SurfaceHolder.Callback
     synchronized (mSurfaceHolder)
     {
       Log.d(T, format("surfaceChanged: %d, %d", width, height));
-      mCanvasHeight = height;
-      mCanvasWidth = width;
-      mState = SHOWING;
+      mHeight = height;
+      mWidth = width;
+      mLines = new GraphLines<Integer>(mWidth);
+      setState(SHOWING);
       repaint();
     }
   }
@@ -130,30 +200,20 @@ public class GraphView extends SurfaceView implements SurfaceHolder.Callback
     synchronized (mSurfaceHolder)
     {
       Log.d(T, "surfaceDestroyed");
-      mState = HIDDEN;
+      setState(HIDDEN);
     }
   }
 
-  public void repaint()
+  public void setState(State state)
   {
-    Canvas c = null;
-    try
-    {
-      c = mSurfaceHolder.lockCanvas(null);
-      synchronized (mSurfaceHolder)
-      {
-        paint(c);
-      }
-    }
-    finally
-    {
-      if (c != null)
-        mSurfaceHolder.unlockCanvasAndPost(c);
-    }
+    mState = state;
+    if (mState == SHOWING)
+      mPaintThread.start();
   }
 
-  public void setDsp(Dsp dsp)
+  public State getState()
   {
-    mDsp = dsp;
+    return mState;
   }
+
 }

@@ -17,14 +17,13 @@ import org.trebor.kinamp.dsp.BumpMonitor;
 import org.trebor.kinamp.dsp.Dsp;
 
 import android.app.Activity;
-import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
-import android.widget.ScrollView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.ToggleButton;
@@ -45,9 +44,8 @@ public class KinAmp extends Activity
   private ToggleButton mGravityToggle;
   private ToggleButton mDegreeToggle;
   private ToggleButton mGravityRange;
-  private TextView mOutput;
-  private ScrollView mOutputScroll;
   private Map<Dimension, DimensionUi> mUiMap;
+  private GraphView mGraphView;
   
   // the big stuff
   
@@ -133,9 +131,8 @@ public class KinAmp extends Activity
     mGravityToggle = (ToggleButton)findViewById(R.id.gravityToggle);
     mDegreeToggle = (ToggleButton)findViewById(R.id.degreeToggle);
     mGravityRange = (ToggleButton)findViewById(R.id.gravityRange);
-    mOutput = (TextView)findViewById(R.id.output);
-    mOutputScroll = (ScrollView)findViewById(R.id.scrollView1);
-
+    mGraphView = (GraphView)findViewById(R.id.graph);
+    
     mUiMap = new HashMap<Dimension, DimensionUi>();
     
     mUiMap.put(X_AXIS, new DimensionUi(seekBarX, minX, valueX, maxX));
@@ -150,9 +147,9 @@ public class KinAmp extends Activity
     {
       public void onClick(View v)
       {
-        //setContentView(R.layout.graph);        
-        Intent graphIntent = new Intent(KinAmp.this, Graph.class);
-        startActivityForResult(graphIntent, 0);
+        //Intent graphIntent = new Intent(KinAmp.this, Graph.class);
+        //graphIntent.putExtra.putExtra("imu", mImu);
+        //startActivityForResult(graphIntent, 0);
       }
     });
 
@@ -246,8 +243,45 @@ public class KinAmp extends Activity
     
     mBluetooth = new BlueTooth(WII_TILT_DEVICE_NAME);
     mImu = new Imu(mBluetooth.getInputStream(), mBluetooth.getOutputStream());
+    
     mImu.addListner(new ImuListener()
     {
+      private int mCount = 0;
+      
+      @SuppressWarnings("serial")
+      Map<Dimension, Integer> mColorMap = new HashMap<Dimension, Integer>()
+      {
+        {
+          put(Dimension.X_AXIS ,Color.rgb(255, 0, 255));
+          put(Dimension.Y_AXIS ,Color.rgb(0, 255, 255));
+          put(Dimension.Z_AXIS ,Color.rgb(255, 255, 0));
+        }
+      };
+
+      public void onRaw(Dimension dimension, int value)
+      {
+        Integer color = mColorMap.get(dimension);
+        if (null != color)
+        {
+          mGraphView.registerSample(color, value);
+          if ((++mCount) % 27 == 0)
+            mGraphView.repaint();
+        }
+        
+      }
+
+      public void onGravity(Dimension dimension, float value)
+      {
+      }
+
+      public void onDegree(Dimension dimension, float value)
+      {
+      }
+    });
+    
+    
+    mImu.addListner(new ImuListener()
+    {      
       public void onRaw(final Dimension dimension, final int value)
       {
         final DimensionUi ui = mUiMap.get(dimension);
@@ -309,6 +343,9 @@ public class KinAmp extends Activity
       }
     });
     
+    
+    
+    
     mDsp = new Dsp(mImu);
     mDsp.addMonitor(new BumpMonitor(Y_AXIS, new Action<BumpMonitor>()
     {
@@ -345,10 +382,6 @@ public class KinAmp extends Activity
         {
           public void run()
           {
-//            unknown.mMax.setText(ff(d1));
-//            unknown.mValue.setText(ff(n));
-//            unknown.mMin.setText(ff(d2));
-
              unknown.mMax.setText(ff(unknown.mRange.getMax()));
              unknown.mValue.setText(ff(value));
              unknown.mMin.setText(ff(unknown.mRange.getMin()));
@@ -392,29 +425,17 @@ public class KinAmp extends Activity
   }
   
   
-  Handler handleMessage = new Handler()
+  private final Handler mHandleRunable = new Handler()
   {
     @Override
     public void handleMessage(Message msg)
     {
-      String message = (String)msg.obj;
-      mOutput.append(message);
-      mOutputScroll.fullScroll(ScrollView.FOCUS_DOWN);
-    }
-  };
-  
-  Handler handleRunable = new Handler()
-  {
-    @Override
-    public void handleMessage(Message msg)
-    {
-      Runnable action = (Runnable)msg.obj;
-      action.run();
+      ((Runnable)msg.obj).run();
     }
   };
   
   private void executeOnUi(Runnable action)
   {
-    handleRunable.sendMessage(handleRunable.obtainMessage(0, action));
+    mHandleRunable.sendMessage(mHandleRunable.obtainMessage(0, action));
   }
 }

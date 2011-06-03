@@ -2,10 +2,10 @@ package org.trebor.kinamp;
 
 import java.util.Iterator;
 
-class GraphLine implements Iterable<Float> 
+public class GraphLine implements Iterable<Float> 
 {
-  private Float mMin = null;
-  private Float mMax = null;
+  private Float mMin = Float.MAX_VALUE;
+  private Float mMax = Float.MIN_VALUE;
   private Float[] mData;
   private int mIndex = 0;
   private final int mLength;
@@ -16,22 +16,36 @@ class GraphLine implements Iterable<Float>
     mData = new Float[mLength];
   }
   
-  public boolean add(float value)
+  public boolean add(float newValue)
   {
     boolean change = false;
-    
+    Float value = newValue;
     Float oldValue = mData[mIndex];
     mData[mIndex] = value;
     mIndex = (mIndex + 1) % mLength;
     
+    if (value <= mMin)
+    {
+      change = true;
+      mMin = value;
+    }
+    
+    if (value >= mMax)
+    {
+      change = true;
+      mMax = value;
+    }
+    
     if (oldValue == mMin)
     {
       change = true;
+      mMin = null;
       findMin();
     }
-    if (oldValue == mMin)
+    if (oldValue == mMax)
     {
       change = true;
+      mMax = null;
       findMax();
     }
     
@@ -41,14 +55,14 @@ class GraphLine implements Iterable<Float>
   private void findMin()
   {
     for (Float value: this)
-      if (value.compareTo(mMin) < 0)
+      if (mMin == null || value.compareTo(mMin) < 0)
         mMin = value;
   }
   
   private void findMax()
   {
     for (Float value: this)
-      if (value.compareTo(mMax) > 0)
+      if (mMax == null || value.compareTo(mMax) > 0)
         mMax = value;
   }
   
@@ -68,9 +82,14 @@ class GraphLine implements Iterable<Float>
     {
       int index = (mIndex + 1) % mLength;
       
+      {
+        while (mData[index] == null && index != mIndex)
+          index = (index + 1) % mLength;
+      }
+      
       public boolean hasNext()
       {
-        return index != mIndex && mData[index] != null;
+        return index != mIndex;
       }
 
       public Float next()

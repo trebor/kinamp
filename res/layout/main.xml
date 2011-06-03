@@ -147,10 +147,8 @@
       </LinearLayout>
     </LinearLayout>
   </LinearLayout>
-  <ScrollView android:layout_height="match_parent"
-    android:layout_width="match_parent" android:id="@+id/scrollView1">
-    <TextView android:text="" android:layout_width="match_parent"
-      android:id="@+id/output" android:layout_height="match_parent"
-      android:textStyle="bold" android:textSize="25sp" android:typeface="monospace"></TextView>
-  </ScrollView>
+    <org.trebor.kinamp.GraphView
+      android:id="@+id/graph"
+      android:layout_width="match_parent"
+      android:layout_height="match_parent"/>
 </LinearLayout>
