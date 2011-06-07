@@ -5,22 +5,28 @@ import static org.trebor.kinamp.Imu.Dimension.*;
 import static org.trebor.kinamp.Imu.Mode.*;
 import static org.trebor.kinamp.Imu.GravityRange.*;
 import static org.trebor.kinamp.R.id.*;
+import static java.lang.String.format;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.trebor.kinamp.Imu.Dimension;
 import org.trebor.kinamp.Imu.GravityRange;
 import org.trebor.kinamp.dsp.Action;
 import org.trebor.kinamp.dsp.BumpMonitor;
+import org.trebor.kinamp.dsp.BumpMonitorEvent;
 import org.trebor.kinamp.dsp.Dsp;
+import org.trebor.kinamp.dsp.DspUtil;
+import org.trebor.kinamp.dsp.GraphingBumpMinitor;
+import org.trebor.kinamp.dsp.RawMonitor;
+import org.trebor.kinamp.dsp.RawMonitorEvent;
 
 import android.app.Activity;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -28,9 +34,14 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.ToggleButton;
 
+@SuppressWarnings("unused")
 public class KinAmp extends Activity
 {
- // constants
+  private static final String FLOAT_FORMAT = "%6.4f";
+
+  private final String T = "+" + getClass().getSimpleName().toString();
+
+  // constants
 
   public static final String WII_TILT_DEVICE_NAME = "FireFly-AAF0";
   private static final int GRAVITY_BAR_RANGE = 100;
@@ -54,6 +65,19 @@ public class KinAmp extends Activity
   private Imu mImu;
   private Dsp mDsp;
 
+  // dimention color lookup  thable
+  
+  @SuppressWarnings("serial")
+  public static final Map<Dimension, Integer> DIMENTION_COLOR_MAP =
+    new HashMap<Dimension, Integer>()
+    {
+      {
+        put(Dimension.X_AXIS, Color.rgb(255, 0, 255));
+        put(Dimension.Y_AXIS, Color.rgb(0, 255, 255));
+        put(Dimension.Z_AXIS, Color.rgb(255, 255, 0));
+      }
+    };
+
   class DimensionUi
   {
     public SeekBar mSeekBar;
@@ -73,52 +97,6 @@ public class KinAmp extends Activity
     }
   }
   
-  class Range
-  {
-    private float mMin;
-    private float mMax;
-
-    public Range()
-    {
-      reset();
-    }
-    
-    private void reset()
-    {
-      mMin = Float.MAX_VALUE;
-      mMax = Float.MIN_VALUE;
-    }
-
-    public void register(float sample)
-    {
-      if (sample > mMax)
-        mMax = sample;
-      
-      if (sample < mMin)
-        mMin = sample;
-    }
-    
-    public float normal(float sample)
-    {
-      register(sample);
-      
-      if (sample == mMin && sample == mMax)
-        return 0;
-
-      return (sample - mMin) / (mMax - mMin);
-    }
-
-    public float getMin()
-    {
-      return mMin;
-    }
-
-    public float getMax()
-    {
-      return mMax;
-    }
-  }
-  
   @Override
   public void onCreate(Bundle savedInstanceState)
   {
@@ -132,24 +110,60 @@ public class KinAmp extends Activity
     mDegreeToggle = (ToggleButton)findViewById(R.id.degreeToggle);
     mGravityRange = (ToggleButton)findViewById(R.id.gravityRange);
     mGraphView = (GraphView)findViewById(R.id.graph);
-    
+
     mUiMap = new HashMap<Dimension, DimensionUi>();
-    
+
     mUiMap.put(X_AXIS, new DimensionUi(seekBarX, minX, valueX, maxX));
     mUiMap.put(Y_AXIS, new DimensionUi(seekBarY, minY, valueY, maxY));
     mUiMap.put(Z_AXIS, new DimensionUi(seekBarZ, minZ, valueZ, maxZ));
     mGravityRange.setChecked(true);
-    
-    final DimensionUi unknown = new DimensionUi(seekBarUk, minUk, valueUk, maxUk);
+
+    final DimensionUi unknown =
+      new DimensionUi(seekBarUk, minUk, valueUk, maxUk);
     unknown.mSeekBar.setMax(100);
+
+    configureClickListeners();
+
+    if (mDisableBlueTooth)
+      return;
+
+    mBluetooth = new BlueTooth(WII_TILT_DEVICE_NAME);
+    mImu = new Imu(mBluetooth.getInputStream(), mBluetooth.getOutputStream());
+
+    // configureSliderUpdater();
+
+    float thresh = 0.05f;
+    mDsp = new Dsp(mImu);
+//    mDsp.addMonitor(new BumpMonitor(X_AXIS, thresh, 0.0f,
+//      new Action<BumpMonitorEvent>()
+//      {
+//        public void execute(BumpMonitorEvent event)
+//        {
+//          mNoiseBox.play(event.getType() == BumpMonitorEvent.BumpType.UP
+//            ? DRUM1
+//            : TINKLE, event.getAmplitude());
+//        }
+//      }));
     
+    mDsp.addMonitor(new BumpMonitor(Y_AXIS, thresh, 0.0f,
+      new Action<BumpMonitorEvent>()
+      {
+        public void execute(BumpMonitorEvent event)
+        {
+          mNoiseBox.play(event.getType() == BumpMonitorEvent.BumpType.UP
+            ? COWBELL1
+            : COWBELL2, event.getAmplitude());
+        }
+      }));
+  }
+
+  private void configureClickListeners()
+  {
     mBeep.setOnClickListener(new OnClickListener()
     {
       public void onClick(View v)
       {
-        //Intent graphIntent = new Intent(KinAmp.this, Graph.class);
-        //graphIntent.putExtra.putExtra("imu", mImu);
-        //startActivityForResult(graphIntent, 0);
+        mNoiseBox.play(PING);
       }
     });
 
@@ -237,49 +251,10 @@ public class KinAmp extends Activity
         }
       }
     });
+  }
 
-    if (mDisableBlueTooth)
-      return;
-    
-    mBluetooth = new BlueTooth(WII_TILT_DEVICE_NAME);
-    mImu = new Imu(mBluetooth.getInputStream(), mBluetooth.getOutputStream());
-    
-    mImu.addListner(new ImuListener()
-    {
-      private int mCount = 0;
-      
-      @SuppressWarnings("serial")
-      Map<Dimension, Integer> mColorMap = new HashMap<Dimension, Integer>()
-      {
-        {
-          put(Dimension.X_AXIS ,Color.rgb(255, 0, 255));
-          put(Dimension.Y_AXIS ,Color.rgb(0, 255, 255));
-          put(Dimension.Z_AXIS ,Color.rgb(255, 255, 0));
-        }
-      };
-
-      public void onRaw(Dimension dimension, int value)
-      {
-        Integer color = mColorMap.get(dimension);
-        if (null != color)
-        {
-          mGraphView.registerSample(color, value);
-          if ((++mCount) % 27 == 0)
-            mGraphView.repaint();
-        }
-        
-      }
-
-      public void onGravity(Dimension dimension, float value)
-      {
-      }
-
-      public void onDegree(Dimension dimension, float value)
-      {
-      }
-    });
-    
-    
+  private void configureSliderUpdater()
+  {
     mImu.addListner(new ImuListener()
     {      
       public void onRaw(final Dimension dimension, final int value)
@@ -342,59 +317,6 @@ public class KinAmp extends Activity
         });
       }
     });
-    
-    
-    
-    
-    mDsp = new Dsp(mImu);
-    mDsp.addMonitor(new BumpMonitor(Y_AXIS, new Action<BumpMonitor>()
-    {
-      float o1 = 0.5f;
-      float o2 = 0.5f;
-      AtomicBoolean p1 = null;
-      AtomicBoolean p2 = null;
-
-      public void execute(BumpMonitor monitor)
-      {
-        final float value = monitor.getFilterHistory();
-        final float THRESH = 0.1f;
-        
-        final float n = unknown.mRange.normal(value);
-
-        float d1 = n - o1;
-        float d2 = o1 - o2;
-        
-        if (d1 > THRESH && d2 > THRESH && d1 > d2)
-        {
-//          if (p1 == null || p1.get())
-            p1 = mNoiseBox.play(COWBELL1);
-        }
-        if (d1 < -THRESH && d2 < -THRESH && d1 > d2)
-        {
-//          if (p2 == null || p2.get())
-            p2 = mNoiseBox.play(COWBELL2);
-        }
-
-        o2 = o1;
-        o1 = n;
-        
-        executeOnUi(new Runnable()
-        {
-          public void run()
-          {
-             unknown.mMax.setText(ff(unknown.mRange.getMax()));
-             unknown.mValue.setText(ff(value));
-             unknown.mMin.setText(ff(unknown.mRange.getMin()));
-            unknown.mSeekBar.setProgress((int)(n * 100));
-          }
-        });
-      }
-
-      private String ff(float value)
-      {
-        return "" + (Math.floor(value * 100) / 100);
-      }
-    }));
   }
 
   public GravityRange getGravityRange()

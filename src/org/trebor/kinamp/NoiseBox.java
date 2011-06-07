@@ -13,7 +13,9 @@ public class NoiseBox
   {
     PING(R.raw.sonar_ping),
     COWBELL1(R.raw.cowbell1),
-    COWBELL2(R.raw.cowbell2);
+    COWBELL2(R.raw.cowbell2),
+    DRUM1(R.raw.drum1),
+    TINKLE(R.raw.tinkle);
     
     private final int mResourceId;
     

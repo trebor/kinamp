@@ -11,7 +11,7 @@ public class GraphLines<Key>
   private final int mLength;
   private float mMin = Float.MAX_VALUE;
   private float mMax = Float.MIN_VALUE;
-  
+
   public GraphLines(int length)
   {
     mLength = length;
@@ -26,19 +26,30 @@ public class GraphLines<Key>
       line = new GraphLine(mLength);
       mLines.put(key, line);
     }
-    
+
     if (line.add(value))
     {
-      if (line.getMax() > mMax)
-        mMax = line.getMax();
-      if (line.getMin() < mMin)
-        mMin = line.getMin();
+      mMin = Float.MAX_VALUE;
+      mMax = Float.MIN_VALUE;
+
+      for (GraphLine l : mLines.values())
+      {
+        if (l.getMax() > mMax)
+          mMax = l.getMax();
+        if (l.getMin() < mMin)
+          mMin = l.getMin();
+      }
     }
   }
-  
-  public float normal(float value)
+
+  public GraphLine getLine(Key key)
   {
-    return (value - mMin) / (mMax - mMin);
+    return mLines.get(key);
+  }
+  
+  private float normal(float value)
+  {
+    return GraphLine.isSpecial(value) ? value : (value - mMin) / (mMax - mMin);
   }
 
   Iterable<Float> getNormalized(Key key)

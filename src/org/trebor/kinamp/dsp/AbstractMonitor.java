@@ -3,10 +3,10 @@ package org.trebor.kinamp.dsp;
 import org.trebor.kinamp.Imu.Dimension;
 import org.trebor.kinamp.Imu.Mode;
 
-public abstract class AbstractMonitor<T extends Monitor> implements Monitor
+public abstract class AbstractMonitor<T extends MonitorEvent> implements Monitor
 {
   private final Dimension mDimension;
-  private final Action<T> mAction;
+  private Action<T> mAction;
   private final Mode mMode;
   
   public AbstractMonitor(Mode mode, Dimension dimension, Action<T> action)
@@ -26,10 +26,20 @@ public abstract class AbstractMonitor<T extends Monitor> implements Monitor
     return mMode;
   }
   
-  protected void execute(T monitor)
+  protected void execute(T event)
   {
-    mAction.execute(monitor);
+    mAction.execute(event);
   }
   
   public abstract void sample(float value);
+
+  public void setAction(Action<T> action)
+  {
+    mAction = action;
+  }
+
+  public Action<T> getAction()
+  {
+    return mAction;
+  }
 }

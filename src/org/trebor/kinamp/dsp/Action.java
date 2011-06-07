@@ -1,6 +1,6 @@
 package org.trebor.kinamp.dsp;
 
-public interface Action<T extends Monitor>
+public interface Action<T extends MonitorEvent>
 {
-  void execute(T monitor);
+  void execute(T event);
 }

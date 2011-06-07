@@ -14,10 +14,9 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import android.util.Log;
-
 public class Imu
 {
+  @SuppressWarnings("unused")
   private final String T = "+" + getClass().getSimpleName().toString();
 
   public static final String RAW_LINE_REGEX = "^(X=([\\d]*))?(Y=([\\d]*))?(Z=([\\d]*))?(B=([\\d]*))?(R=([\\d]*))?$";
@@ -203,7 +202,17 @@ public class Imu
     mSource = new BufferedReader(new InputStreamReader(inputStream));
     mSink = new BufferedWriter(new OutputStreamWriter(outputStream));
     mListeners = new ArrayList<ImuListener>();
-    mProcessThread = null;
+    mProcessThread = new Thread()
+    {
+      public void run()
+      {
+        processImuData();
+      }
+    };
+
+    mMode = Mode.RAW;
+    stop();
+    mProcessThread.start();
   }
 
   public void addListner(ImuListener listener)
@@ -244,63 +253,40 @@ public class Imu
   
   public void start(Mode mode, GravityRange range, boolean block)
   {
-    // stop if running 
-    
-    if (isRunning())
-      stop();
-    
     // set mode and range
-    
+
     mMode = mode;
     mRange = range;
-    
-    // start a thread to capture data
-    
-    mProcessThread = new Thread()
-    {
-      public void run()
-      {
-        processImuData();
-      }
-    };
+
+    // start the data
+
+    startData();
 
     // start the process thread and block if required
-    
-    synchronized (mProcessThread)
-    {
-      startData();
-      mProcessThread.start();
 
-      if (block)
+    if (block)
+    {
+      try
       {
-        try
+        synchronized (mProcessThread)
         {
           mProcessThread.wait();
         }
-        catch (InterruptedException e)
-        {
-          e.printStackTrace();
-        }
+      }
+      catch (InterruptedException e)
+      {
+        e.printStackTrace();
       }
     }
   }
 
   public void stop()
   {
-    if (null != mProcessThread)
+    stopData();
+    synchronized (mProcessThread)
     {
-      synchronized (mProcessThread)
-      {
-        stopData();
-        mProcessThread.notifyAll();
-        mProcessThread = null;
-      }
+      mProcessThread.notify();
     }
-  }
-
-  private boolean isRunning()
-  {
-    return null != mProcessThread;
   }
 
   private void startData()

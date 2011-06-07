@@ -13,17 +13,11 @@ import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
-/**
- * View that draws, takes keystrokes, etc. for a simple LunarLander game.
- * Has a mode which RUNNING, PAUSED, etc. Has a x, y, dx, dy, ... capturing
- * the current ship physics. All x/y etc. are measured with (0,0) at the
- * lower left. updatePhysics() advances the physics based on realtime.
- * draw() renders the ship, and does an invalidate() to prompt another
- * draw() as soon as possible by the system.
- */
-
 public class GraphView extends SurfaceView implements SurfaceHolder.Callback
 {
+  private static final int FRAMES_PER_SECOND = 20;
+  private static final int FRAME_DELAY = 1000 / FRAMES_PER_SECOND;
+
   private final String T = "+" + getClass().getSimpleName().toString();
   
   private SurfaceHolder mSurfaceHolder;
@@ -67,11 +61,11 @@ public class GraphView extends SurfaceView implements SurfaceHolder.Callback
     {
       try
       {
-        synchronized (mLines)
+        synchronized (getLines())
         {
-          mLines.wait();
+          getLines().wait(FRAME_DELAY);
+          paint();
         }
-        paint();
       }
       catch (InterruptedException e)
       {
@@ -84,16 +78,21 @@ public class GraphView extends SurfaceView implements SurfaceHolder.Callback
   {
     synchronized (mSurfaceHolder)
     {
-      if (null != mLines)
-        mLines.register(color, sample);
+      if (null != getLines())
+      {        
+        getLines().register(color, sample);
+        getLines().register(color, sample);
+        getLines().register(color, sample);
+        getLines().register(color, sample);
+      }
     }
   }
 
   public void repaint()
   {
-    synchronized (mLines)
+    synchronized (getLines())
     {
-      mLines.notify();
+      getLines().notify();
     }
  }
   
@@ -120,31 +119,31 @@ public class GraphView extends SurfaceView implements SurfaceHolder.Callback
 
   private void paint(Canvas canvas)
   {
+    canvas.scale(1, -1);
+    canvas.translate(0, -mHeight);
+   
     Paint paint = new Paint();
     paint.setStyle(Style.FILL);
     paint.setAntiAlias(true);
     paint.setColor(Color.BLACK);
     canvas.drawRect(canvas.getClipBounds(), paint);
     
-    //RectF oval = new RectF(0, 0, mWidth, mHeight);
-    //canvas.drawOval(oval, paint);
-    
-    //paint.setColor(Color.GREEN);
-    //canvas.drawCircle(50, 50, 25, paint);
-    
     paint.setStyle(Style.STROKE);
-    for (int color: mLines.getKeys())
+    for (int color: getLines().getKeys())
     {
       paint.setColor(color);
       int x = 0;
       int old = Integer.MAX_VALUE;
-      for (float value: mLines.getNormalized(color))
+      for (float value: getLines().getNormalized(color))
       {
-        if (value < 0 || value > 1)
-          Log.d(T, "value: " + value);
-        
         int corrected = (int)(mHeight * value);
-        if (old == Integer.MAX_VALUE)
+        if (value == GraphLine.VERTICAL_LINE)
+          canvas.drawLine(x, 0, x, mHeight, paint);
+        else if (value == GraphLine.UP_LINE)
+          canvas.drawLine(x, mHeight * 3 / 4, x, mHeight, paint);
+        else if (value == GraphLine.DN_LINE)
+          canvas.drawLine(x, 0, x, mHeight / 4, paint);
+        else if (old == Integer.MAX_VALUE)
           canvas.drawPoint(x, corrected, paint);
         else
           canvas.drawLine(x - 1, old, x, corrected, paint);
@@ -181,7 +180,7 @@ public class GraphView extends SurfaceView implements SurfaceHolder.Callback
       Log.d(T, format("surfaceChanged: %d, %d", width, height));
       mHeight = height;
       mWidth = width;
-      mLines = new GraphLines<Integer>(mWidth);
+      setLines(new GraphLines<Integer>(mWidth));
       setState(SHOWING);
       repaint();
     }
@@ -207,13 +206,23 @@ public class GraphView extends SurfaceView implements SurfaceHolder.Callback
   public void setState(State state)
   {
     mState = state;
-    if (mState == SHOWING)
-      mPaintThread.start();
+//    if (mState == SHOWING)
+//      mPaintThread.start();
   }
 
   public State getState()
   {
     return mState;
+  }
+
+  public void setLines(GraphLines<Integer> lines)
+  {
+    mLines = lines;
+  }
+
+  public GraphLines<Integer> getLines()
+  {
+    return mLines;
   }
 
 }
