@@ -1,14 +1,19 @@
 package org.trebor.kinamp;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import android.content.Context;
-import android.media.MediaPlayer;
+import android.media.AudioManager;
+import android.media.SoundPool;
 
 public class NoiseBox
 {
+  private final SoundPool mSoundPool;
   private final Context mContext;
-
+  private final Map<Sound, Integer> mSoundMap;
+  
   public enum Sound
   {
     PING(R.raw.sonar_ping),
@@ -33,6 +38,10 @@ public class NoiseBox
   public NoiseBox(Context context)
   {
     mContext = context;
+    mSoundPool = new SoundPool(4, AudioManager.STREAM_MUSIC, 0);
+    mSoundMap = new HashMap<Sound, Integer>();
+    for (Sound sound: Sound.values())
+      mSoundMap.put(sound, mSoundPool.load(mContext, sound.getResourceId(), 1));
   }
   
   public AtomicBoolean play(Sound sound)
@@ -47,35 +56,7 @@ public class NoiseBox
   
   public AtomicBoolean play(final Sound sound, final float leftLevel, final float rightLevel)
   {
-    final MediaPlayer player = MediaPlayer.create(mContext, sound.getResourceId());
-    final AtomicBoolean isDone = new AtomicBoolean(false);
-    
-    new Thread()
-    {
-      public void run()
-      {
-        //logger.debug("start: %d", sound.getResourceId());
-        player.setVolume(leftLevel, rightLevel);
-        player.start();
-        synchronized (player)
-        {
-          try
-          {
-            while (player.isPlaying())
-              player.wait(100);
-          }
-          catch (InterruptedException e)
-          {
-            e.printStackTrace();
-          }
-        }
-        player.release();
-        isDone.set(true);
-        
-        //logger.debug("end: %d", sound.getResourceId());
-      }
-    }.start();
-    
-    return isDone;
+    mSoundPool.play(mSoundMap.get(sound), leftLevel, rightLevel, 1, 0, 1f);
+    return null;
   }
 }

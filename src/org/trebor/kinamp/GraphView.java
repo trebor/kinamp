@@ -26,6 +26,7 @@ public class GraphView extends SurfaceView implements SurfaceHolder.Callback
   private GraphLines<Integer> mLines;
   private State mState;
   private Thread mPaintThread;
+  private boolean mEnabled = false;
   
   public enum State
   {
@@ -206,8 +207,8 @@ public class GraphView extends SurfaceView implements SurfaceHolder.Callback
   public void setState(State state)
   {
     mState = state;
-//    if (mState == SHOWING)
-//      mPaintThread.start();
+    if (mState == SHOWING && mEnabled)
+      mPaintThread.start();
   }
 
   public State getState()

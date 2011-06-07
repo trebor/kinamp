@@ -3,7 +3,6 @@ package org.trebor.kinamp.dsp;
 import org.trebor.kinamp.GraphLine;
 import org.trebor.kinamp.GraphView;
 import org.trebor.kinamp.Imu.Dimension;
-import org.trebor.kinamp.dsp.BumpMonitorEvent.BumpType;
 
 import android.graphics.Color;
 

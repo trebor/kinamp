@@ -9,6 +9,7 @@ import org.trebor.kinamp.Range;
 
 public class BumpMonitor extends AbstractMonitor<BumpMonitorEvent>
 {
+  @SuppressWarnings("unused")
   private final String T = "+" + getClass().getSimpleName().toString();
 
   private float mFilterHistory;
