@@ -1,16 +1,16 @@
 package org.trebor.kinamp.dsp;
 
-import static org.trebor.kinamp.Imu.Mode.*;
+import static org.trebor.kinamp.imu.Imu.Mode.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.trebor.kinamp.Imu;
-import org.trebor.kinamp.ImuListener;
-import org.trebor.kinamp.Imu.Dimension;
-import org.trebor.kinamp.Imu.Mode;
+import org.trebor.kinamp.imu.Imu;
+import org.trebor.kinamp.imu.ImuListener;
+import org.trebor.kinamp.imu.Imu.Dimension;
+import org.trebor.kinamp.imu.Imu.Mode;
 
 public class Dsp implements ImuListener
 {

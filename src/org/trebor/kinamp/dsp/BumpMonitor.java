@@ -1,10 +1,10 @@
 package org.trebor.kinamp.dsp;
 
-import static org.trebor.kinamp.Imu.Mode.*;
 import static org.trebor.kinamp.dsp.DspUtil.lowPass;
 import static org.trebor.kinamp.dsp.BumpMonitorEvent.BumpType.*;
+import static org.trebor.kinamp.imu.Imu.Mode.*;
 
-import org.trebor.kinamp.Imu.Dimension;
+import org.trebor.kinamp.imu.Imu.Dimension;
 import org.trebor.kinamp.Range;
 
 public class BumpMonitor extends AbstractMonitor<BumpMonitorEvent>

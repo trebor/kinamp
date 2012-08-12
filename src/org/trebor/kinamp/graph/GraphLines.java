@@ -1,4 +1,4 @@
-package org.trebor.kinamp;
+package org.trebor.kinamp.graph;
 
 import java.util.HashMap;
 import java.util.Iterator;

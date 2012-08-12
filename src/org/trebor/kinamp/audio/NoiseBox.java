@@ -1,8 +1,10 @@
-package org.trebor.kinamp;
+package org.trebor.kinamp.audio;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.trebor.kinamp.R;
 
 import android.content.Context;
 import android.media.AudioManager;
@@ -20,7 +22,15 @@ public class NoiseBox
     COWBELL1(R.raw.cowbell1),
     COWBELL2(R.raw.cowbell2),
     DRUM1(R.raw.drum1),
-    TINKLE(R.raw.tinkle);
+    TINKLE(R.raw.tinkle),
+    BLIP2(R.raw.blip2),
+    BRDGBTN7(R.raw.brdgbtn7),
+    FEMEEK2(R.raw.femeek2),
+    FLOOP(R.raw.floop),
+    NICEBEEP(R.raw.nicebeep),
+    TREKWHST(R.raw.trekwhst),
+    TREKDOOR(R.raw.trekdoor),
+    TING(R.raw.ting);
     
     private final int mResourceId;
     

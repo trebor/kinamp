@@ -1,8 +1,10 @@
-package org.trebor.kinamp.dsp;
+package org.trebor.kinamp.graph;
 
-import org.trebor.kinamp.GraphLine;
-import org.trebor.kinamp.GraphView;
-import org.trebor.kinamp.Imu.Dimension;
+import org.trebor.kinamp.dsp.Action;
+import org.trebor.kinamp.dsp.BumpMonitor;
+import org.trebor.kinamp.dsp.BumpMonitorEvent;
+import org.trebor.kinamp.dsp.BumpMonitorEvent.BumpType;
+import org.trebor.kinamp.imu.Imu.Dimension;
 
 import android.graphics.Color;
 

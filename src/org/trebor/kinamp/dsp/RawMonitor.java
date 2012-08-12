@@ -1,7 +1,7 @@
 package org.trebor.kinamp.dsp;
 
-import org.trebor.kinamp.Imu.Dimension;
-import org.trebor.kinamp.Imu.Mode;
+import org.trebor.kinamp.imu.Imu.Dimension;
+import org.trebor.kinamp.imu.Imu.Mode;
 
 public class RawMonitor extends AbstractMonitor<RawMonitorEvent>
 {

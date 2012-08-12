@@ -1,6 +1,6 @@
-package org.trebor.kinamp;
+package org.trebor.kinamp.graph;
 
-import static org.trebor.kinamp.GraphView.State.*;
+import static org.trebor.kinamp.graph.GraphView.State.*;
 import static java.lang.String.format;
 
 import android.content.Context;

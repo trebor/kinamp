@@ -1,6 +1,7 @@
-package org.trebor.kinamp;
+package org.trebor.kinamp.imu;
 
-import static org.trebor.kinamp.Imu.Dimension.*;
+import static org.trebor.kinamp.imu.Imu.Dimension.*;
+import static java.lang.System.*;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -139,6 +140,8 @@ public class Imu
     public void processLine(final String line, final GravityRange range,
       final List<ImuListener> listeners)
     {
+      out.format("processLine(%s, %s, %s)\n", line, range, listeners.size());
+      
       Matcher m = parse(line);
       if (!m.find())
         return;
@@ -224,15 +227,21 @@ public class Imu
   {
     try
     {
+      out.format("processImuData().mark %s\n", 1);
       while (null != mProcessThread || mSource.ready())
       {
         try
         {
+          out.format("processImuData().mark %s\n", 2);
           String line = mSource.readLine();
+          out.format("processImuData().mark %s\n", 3);
           if (null != line)
             mMode.processLine(line, mRange, mListeners);
           else
+          {
+            out.format("processImuData().mark %s\n", 4);
             stop();
+          }
         }
         catch (IOException e)
         {
@@ -244,6 +253,8 @@ public class Imu
     {
       e.printStackTrace();
     }
+    
+    out.format("processImuData().mark %s\n", 5);
   }
 
   public void start(Mode mode, GravityRange range)
@@ -253,6 +264,8 @@ public class Imu
   
   public void start(Mode mode, GravityRange range, boolean block)
   {
+    out.format("start(%s, %s, %s)\n", mode, range, block);
+    
     // set mode and range
 
     mMode = mode;
@@ -270,7 +283,9 @@ public class Imu
       {
         synchronized (mProcessThread)
         {
+          out.format("pre-wait\n");
           mProcessThread.wait();
+          out.format("post-wait\n");
         }
       }
       catch (InterruptedException e)
@@ -278,6 +293,8 @@ public class Imu
         e.printStackTrace();
       }
     }
+    
+    out.format("start() - end\n");
   }
 
   public void stop()

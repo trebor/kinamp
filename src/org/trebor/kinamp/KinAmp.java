@@ -1,25 +1,31 @@
 package org.trebor.kinamp;
 
-import static org.trebor.kinamp.NoiseBox.Sound.*;
-import static org.trebor.kinamp.Imu.Dimension.*;
-import static org.trebor.kinamp.Imu.Mode.*;
-import static org.trebor.kinamp.Imu.GravityRange.*;
 import static org.trebor.kinamp.R.id.*;
+import static org.trebor.kinamp.audio.NoiseBox.Sound.*;
+import static org.trebor.kinamp.imu.Imu.Dimension.*;
+import static org.trebor.kinamp.imu.Imu.GravityRange.*;
+import static org.trebor.kinamp.imu.Imu.Mode.*;
+import static org.trebor.kinamp.dsp.BumpMonitorEvent.BumpType.*;
 import static java.lang.String.format;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import org.trebor.kinamp.Imu.Dimension;
-import org.trebor.kinamp.Imu.GravityRange;
+import org.trebor.kinamp.audio.NoiseBox;
+import org.trebor.kinamp.audio.SoundSeries;
 import org.trebor.kinamp.dsp.Action;
 import org.trebor.kinamp.dsp.BumpMonitor;
 import org.trebor.kinamp.dsp.BumpMonitorEvent;
 import org.trebor.kinamp.dsp.Dsp;
 import org.trebor.kinamp.dsp.DspUtil;
-import org.trebor.kinamp.dsp.GraphingBumpMinitor;
 import org.trebor.kinamp.dsp.RawMonitor;
 import org.trebor.kinamp.dsp.RawMonitorEvent;
+import org.trebor.kinamp.graph.GraphView;
+import org.trebor.kinamp.graph.GraphingBumpMinitor;
+import org.trebor.kinamp.imu.Imu;
+import org.trebor.kinamp.imu.ImuListener;
+import org.trebor.kinamp.imu.Imu.Dimension;
+import org.trebor.kinamp.imu.Imu.GravityRange;
 
 import android.app.Activity;
 import android.graphics.Color;
@@ -132,25 +138,27 @@ public class KinAmp extends Activity
 
     // configureSliderUpdater();
 
-    float thresh = 0.05f;
+
+    final SoundSeries testSet = new SoundSeries(DRUM1, FLOOP, NICEBEEP, TING, TREKWHST, FEMEEK2);
+    
+    float thresh = 0.10f;
     mDsp = new Dsp(mImu);
-//    mDsp.addMonitor(new BumpMonitor(X_AXIS, thresh, 0.0f,
-//      new Action<BumpMonitorEvent>()
-//      {
-//        public void execute(BumpMonitorEvent event)
-//        {
-//          mNoiseBox.play(event.getType() == BumpMonitorEvent.BumpType.UP
-//            ? DRUM1
-//            : TINKLE, event.getAmplitude());
-//        }
-//      }));
+    mDsp.addMonitor(new BumpMonitor(X_AXIS, thresh, 0.0f,
+      new Action<BumpMonitorEvent>()
+      {
+        public void execute(BumpMonitorEvent event)
+        {
+          if (event.getType() == UP)
+            mNoiseBox.play(testSet.next(), event.getAmplitude());
+        }
+      }));
     
     mDsp.addMonitor(new BumpMonitor(Y_AXIS, thresh, 0.0f,
       new Action<BumpMonitorEvent>()
       {
         public void execute(BumpMonitorEvent event)
         {
-          mNoiseBox.play(event.getType() == BumpMonitorEvent.BumpType.UP
+          mNoiseBox.play(event.getType() == UP
             ? COWBELL1
             : COWBELL2, event.getAmplitude());
         }

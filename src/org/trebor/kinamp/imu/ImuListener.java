@@ -1,6 +1,6 @@
-package org.trebor.kinamp;
+package org.trebor.kinamp.imu;
 
-import org.trebor.kinamp.Imu.Dimension;
+import org.trebor.kinamp.imu.Imu.Dimension;
 
 public interface ImuListener
 {
